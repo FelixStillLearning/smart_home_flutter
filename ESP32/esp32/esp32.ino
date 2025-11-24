@@ -15,8 +15,8 @@
 #include <ArduinoJson.h>
 
 // ================== WIFI CONFIGURATION ==================
-const char* ssid = "Virendra";        // Ganti dengan SSID WiFi Anda
-const char* password = "Faturahman"; // Ganti dengan password WiFi Anda
+const char* ssid = "Virendra";        
+const char* password = "Faturahman"; 
 
 // ================== MQTT CONFIGURATION ==================
 const char* mqtt_broker = "broker.hivemq.com";

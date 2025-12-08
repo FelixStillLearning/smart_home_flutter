@@ -16,6 +16,14 @@ dependencies:
   # MQTT Client
   mqtt_client: ^10.0.0
   
+  # HTTP & Auth
+  http: ^1.1.0
+  jwt_decoder: ^2.0.1
+  
+  # Camera & Image
+  camera: ^0.10.5+5
+  image_picker: ^1.0.4
+  
   # UI & Icons
   cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0

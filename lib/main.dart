@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/smart_home_provider.dart';
-import 'screens/dashboard_screen.dart';
+import 'providers/auth_provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/main_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,15 +15,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => SmartHomeProvider(),
+      create: (_) => AuthProvider(),
       child: MaterialApp(
         title: 'Smart Home IoT',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF667eea)),
           useMaterial3: true,
         ),
         home: const SplashScreen(),
+        routes: {
+          '/login': (context) => LoginScreen(),
+          '/register': (context) => RegisterScreen(),
+          '/main': (context) => MainScreen(),
+        },
       ),
     );
   }
@@ -42,47 +49,67 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    final provider = Provider.of<SmartHomeProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
-    // Show loading
+    // Initialize auth state
+    await authProvider.initialize();
+    
+    // Wait minimal 1 detik untuk splash screen
     await Future.delayed(const Duration(seconds: 1));
-    
-    // Initialize with dummy data (skip MQTT connection for demo)
-    await provider.connectToMqtt();
     
     if (!mounted) return;
     
-    // Always navigate to dashboard
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-    );
+    // Navigate berdasarkan auth state
+    if (authProvider.isAuthenticated) {
+      Navigator.of(context).pushReplacementNamed('/main');
+    } else {
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.home,
-              size: 100,
-              color: Colors.blue,
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Smart Home IoT',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF667eea),
+              Color(0xFF764ba2),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.home_rounded,
+                size: 100,
+                color: Colors.white,
               ),
-            ),
-            SizedBox(height: 48),
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Connecting to MQTT broker...'),
-          ],
+              SizedBox(height: 24),
+              Text(
+                'Smart Home IoT',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 48),
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Loading...',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
         ),
       ),
     );

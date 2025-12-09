@@ -84,7 +84,7 @@ class DashboardHomeScreen extends StatelessWidget {
         onRefresh: () async {
           // Reconnect jika disconnected
           if (!provider.isConnected) {
-            await provider.connectToMqtt();
+            await provider.connectToBackend();
           }
         },
         child: SingleChildScrollView(

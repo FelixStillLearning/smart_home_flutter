@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import '../models/sensor_models.dart';
-import '../services/mqtt_service.dart';
+import '../services/api_service.dart';
 
 class SmartHomeProvider with ChangeNotifier {
-  final MqttService _mqttService = MqttService();
+  final ApiService _apiService = ApiService();
+  Timer? _pollingTimer;
 
   // ========== STATE VARIABLES ==========
   
@@ -45,38 +49,152 @@ class SmartHomeProvider with ChangeNotifier {
   bool get isLightOn => _isLightOn;
   int get curtainPosition => _curtainPosition;
 
-  // ========== MQTT CONNECTION ==========
+  // ========== BACKEND CONNECTION ==========
 
-  Future<bool> connectToMqtt() async {
-    // Setup callbacks
-    _mqttService.onTemperatureReceived = _handleTemperatureData;
-    _mqttService.onHumidityReceived = _handleHumidityData;
-    _mqttService.onGasReceived = _handleGasData;
-    _mqttService.onLightReceived = _handleLightData;
-    _mqttService.onDoorStatusReceived = _handleDoorStatusData;
-    _mqttService.onConnectionStatusChanged = _handleConnectionStatusChanged;
-
-    // Connect
-    final success = await _mqttService.connect();
-    if (success) {
-      _isConnected = true;
-      _connectionStatus = 'Connected';
+  Future<bool> connectToBackend() async {
+    // Menggunakan HTTP API polling untuk mendapatkan data real-time
+    print('[API] Starting connection to Go backend...');
+    
+    // Check health backend
+    final isHealthy = await _apiService.checkHealth();
+    if (!isHealthy) {
+      print('[API] ❌ Backend not responding');
+      _isConnected = false;
+      _connectionStatus = 'Backend Offline';
       notifyListeners();
+      return false;
     }
-    return success;
+
+    print('[API] ✅ Backend is healthy');
+    
+    // Fetch initial data
+    await fetchAllSensorData();
+    
+    // Start polling untuk update real-time (setiap 3 detik)
+    _startPolling();
+    
+    _isConnected = true;
+    _connectionStatus = 'Connected';
+    notifyListeners();
+    return true;
   }
 
-  void disconnectFromMqtt() {
-    _mqttService.disconnect();
+  void disconnectFromBackend() {
+    _stopPolling();
     _isConnected = false;
     _connectionStatus = 'Disconnected';
     notifyListeners();
   }
 
+  // ========== POLLING METHODS ==========
+
+  void _startPolling() {
+    _stopPolling();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      fetchAllSensorData();
+    });
+    print('[API] 📡 Started polling every 3 seconds');
+  }
+
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    print('[API] ⏹️ Stopped polling');
+  }
+
+  /// Fetch all sensor data dari Go API
+  Future<void> fetchAllSensorData() async {
+    try {
+      final data = await _apiService.getAllSensorData();
+
+      if (data['temperature'] != null) {
+        _handleTemperatureData(data['temperature']);
+      }
+      if (data['humidity'] != null) {
+        _handleHumidityData(data['humidity']);
+      }
+      if (data['gas'] != null) {
+        _handleGasData(data['gas']);
+      }
+      if (data['light'] != null) {
+        _handleLightData(data['light']);
+      }
+      if (data['door'] != null) {
+        _handleDoorStatusData(data['door']);
+      }
+    } catch (e) {
+      print('[API] ❌ Error fetching sensor data: $e');
+    }
+  }
+
+  /// Fetch data sensor suhu
+  Future<void> fetchTemperature() async {
+    final data = await _apiService.getTemperature();
+    if (data != null) {
+      _handleTemperatureData(data);
+    }
+  }
+
+  /// Fetch data sensor kelembaban
+  Future<void> fetchHumidity() async {
+    final data = await _apiService.getHumidity();
+    if (data != null) {
+      _handleHumidityData(data);
+    }
+  }
+
+  /// Fetch data sensor gas
+  Future<void> fetchGas() async {
+    final data = await _apiService.getGas();
+    if (data != null) {
+      _handleGasData(data);
+    }
+  }
+
+  /// Fetch data sensor cahaya
+  Future<void> fetchLight() async {
+    final data = await _apiService.getLight();
+    if (data != null) {
+      _handleLightData(data);
+    }
+  }
+
+  /// Fetch status pintu
+  Future<void> fetchDoorStatus() async {
+    final data = await _apiService.getDoorStatus();
+    if (data != null) {
+      _handleDoorStatusData(data);
+    }
+  }
+
+  /// Load historical data untuk grafik
+  Future<void> loadHistoricalData() async {
+    final tempHistory = await _apiService.getTemperatureHistory(limit: 20);
+    final humHistory = await _apiService.getHumidityHistory(limit: 20);
+    final gasHistory = await _apiService.getGasHistory(limit: 20);
+    
+    if (tempHistory.isNotEmpty) {
+      _temperatureHistory.clear();
+      _temperatureHistory.addAll(tempHistory);
+    }
+    
+    if (humHistory.isNotEmpty) {
+      _humidityHistory.clear();
+      _humidityHistory.addAll(humHistory);
+    }
+    
+    if (gasHistory.isNotEmpty) {
+      _gasHistory.clear();
+      _gasHistory.addAll(gasHistory);
+    }
+    
+    notifyListeners();
+  }
+
   // ========== DATA HANDLERS ==========
 
-  void _handleTemperatureData(Map<String, dynamic> data) {
-    _temperatureData = TemperatureData.fromJson(data);
+  void _handleTemperatureData(TemperatureData data) {
+    _temperatureData = data;
     
     // Add to history (keep last 20)
     _temperatureHistory.add(_temperatureData!);
@@ -87,8 +205,8 @@ class SmartHomeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void _handleHumidityData(Map<String, dynamic> data) {
-    _humidityData = HumidityData.fromJson(data);
+  void _handleHumidityData(HumidityData data) {
+    _humidityData = data;
     
     // Add to history
     _humidityHistory.add(_humidityData!);
@@ -99,8 +217,8 @@ class SmartHomeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void _handleGasData(Map<String, dynamic> data) {
-    _gasData = GasData.fromJson(data);
+  void _handleGasData(GasData data) {
+    _gasData = data;
     
     // Add to history
     _gasHistory.add(_gasData!);
@@ -116,65 +234,97 @@ class SmartHomeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void _handleLightData(Map<String, dynamic> data) {
-    _lightData = LightData.fromJson(data);
+  void _handleLightData(LightData data) {
+    _lightData = data;
     notifyListeners();
   }
 
-  void _handleDoorStatusData(Map<String, dynamic> data) {
-    _doorStatus = DoorStatus.fromJson(data);
-    notifyListeners();
-  }
-
-  void _handleConnectionStatusChanged(String status) {
-    _connectionStatus = status;
-    _isConnected = status == 'Connected';
+  void _handleDoorStatusData(DoorStatus data) {
+    _doorStatus = data;
     notifyListeners();
   }
 
   // ========== CONTROL METHODS ==========
 
-  void toggleDoor() {
+  void toggleDoor() async {
     if (!_isConnected) return;
     
     final command = _doorStatus?.isLocked ?? true ? 'UNLOCK' : 'LOCK';
-    _mqttService.publishDoorControl(command);
+    final success = await _apiService.controlDoor(command);
+    
+    if (success) {
+      // Refresh door status setelah kontrol
+      await Future.delayed(const Duration(milliseconds: 500));
+      await fetchDoorStatus();
+    }
   }
 
-  void lockDoor() {
+  void lockDoor() async {
     if (!_isConnected) return;
-    _mqttService.publishDoorControl('LOCK');
+    
+    final success = await _apiService.controlDoor('LOCK');
+    
+    if (success) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      await fetchDoorStatus();
+    }
   }
 
-  void unlockDoor() {
+  void unlockDoor() async {
     if (!_isConnected) return;
-    _mqttService.publishDoorControl('UNLOCK');
+    
+    final success = await _apiService.controlDoor('UNLOCK');
+    
+    if (success) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      await fetchDoorStatus();
+    }
   }
 
-  void toggleLight() {
+  void toggleLight() async {
     if (!_isConnected) return;
     
     _isLightOn = !_isLightOn;
     final command = _isLightOn ? 'ON' : 'OFF';
-    _mqttService.publishLightControl(command);
+    final success = await _apiService.controlLight(command);
+    
+    if (!success) {
+      // Rollback jika gagal
+      _isLightOn = !_isLightOn;
+    }
+    
     notifyListeners();
   }
 
-  void setLightState(bool isOn) {
+  void setLightState(bool isOn) async {
     if (!_isConnected) return;
     
     _isLightOn = isOn;
     final command = isOn ? 'ON' : 'OFF';
-    _mqttService.publishLightControl(command);
+    final success = await _apiService.controlLight(command);
+    
+    if (!success) {
+      // Rollback jika gagal
+      _isLightOn = !isOn;
+    }
+    
     notifyListeners();
   }
 
-  void setCurtainPosition(int position) {
+  void setCurtainPosition(int position) async {
     if (!_isConnected) return;
     
+    final previousPosition = _curtainPosition;
     _curtainPosition = position.clamp(0, 100);
-    _mqttService.publishCurtainControl(_curtainPosition);
     notifyListeners();
+    
+    final success = await _apiService.controlCurtain(_curtainPosition);
+    
+    if (!success) {
+      // Rollback jika gagal
+      _curtainPosition = previousPosition;
+      notifyListeners();
+    }
   }
 
   // ========== UTILITY METHODS ==========
@@ -201,7 +351,7 @@ class SmartHomeProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _mqttService.disconnect();
+    _stopPolling();
     super.dispose();
   }
 }

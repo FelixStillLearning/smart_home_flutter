@@ -47,8 +47,8 @@ class _SplashScreenState extends State<SplashScreen> {
     // Show loading
     await Future.delayed(const Duration(seconds: 1));
     
-    // Initialize with dummy data (skip MQTT connection for demo)
-    await provider.connectToMqtt();
+    // Connect to Go API Backend
+    await provider.connectToBackend();
     
     if (!mounted) return;
     
@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
             SizedBox(height: 48),
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Connecting to MQTT broker...'),
+            Text('Connecting to Go API Backend...'),
           ],
         ),
       ),

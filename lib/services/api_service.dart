@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/sensor_models.dart';
+import '../models/user_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // ========== KONFIGURASI API ==========
   // Untuk Android Emulator gunakan 10.0.2.2 (bukan localhost)
   // Untuk iOS Simulator atau Physical Device, gunakan IP komputer Anda
-  static const String baseUrl = 'http://192.168.86.1:8080';
-  
+  static const String baseUrl = 'http://172.20.10.3:8080';
+
   // API Endpoints - Disesuaikan dengan backend Go
   static const String endpointTemperature = '/api/sensor/temperature';
   static const String endpointHumidity = '/api/sensor/humidity';
@@ -17,9 +19,150 @@ class ApiService {
   static const String endpointDoorControl = '/api/control/door';
   static const String endpointLampControl = '/api/control/lamp';
   static const String endpointCurtainControl = '/api/control/curtain';
-  
+
+  // Auth Endpoints
+  static const String endpointRegister = '/api/auth/register';
+  static const String endpointLogin = '/api/auth/login';
+
   // Timeout duration
   static const Duration timeoutDuration = Duration(seconds: 10);
+
+  // Token storage key
+  static const String _tokenKey = 'auth_token';
+  static const String _userKey = 'user_data';
+
+  // ========== AUTH METHODS ==========
+
+  /// Save token to local storage
+  Future<void> _saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
+  }
+
+  /// Get saved token
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
+  }
+
+  /// Save user data to local storage
+  Future<void> _saveUser(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+  }
+
+  /// Get saved user data
+  Future<User?> getSavedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString(_userKey);
+    if (userJson != null) {
+      return User.fromJson(jsonDecode(userJson));
+    }
+    return null;
+  }
+
+  /// Clear token and user data (logout)
+  Future<void> clearAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userKey);
+  }
+
+  /// Register new user
+  Future<AuthResponse> register(RegisterRequest request) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$endpointRegister'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        // Registration successful
+        final authResponse = AuthResponse.fromJson(jsonData);
+
+        // Save user data if available
+        if (authResponse.user != null) {
+          await _saveUser(authResponse.user!);
+        }
+
+        return authResponse;
+      } else {
+        // Registration failed
+        return AuthResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Registration failed',
+          error: jsonData['error'],
+        );
+      }
+    } catch (e) {
+      print('[API] Exception during registration: $e');
+      return AuthResponse(
+        success: false,
+        message: 'Connection error',
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Login user
+  Future<AuthResponse> login(LoginRequest request) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$endpointLogin'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Login successful
+        final authResponse = AuthResponse.fromJson(jsonData);
+
+        // Save token and user data
+        if (authResponse.token != null) {
+          await _saveToken(authResponse.token!);
+        }
+        if (authResponse.user != null) {
+          await _saveUser(authResponse.user!);
+        }
+
+        return authResponse;
+      } else {
+        // Login failed
+        return AuthResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Login failed',
+          error: jsonData['error'],
+        );
+      }
+    } catch (e) {
+      print('[API] Exception during login: $e');
+      return AuthResponse(
+        success: false,
+        message: 'Connection error',
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Logout user
+  Future<void> logout() async {
+    await clearAuth();
+  }
+
+  /// Check if user is logged in
+  Future<bool> isLoggedIn() async {
+    final token = await getToken();
+    return token != null && token.isNotEmpty;
+  }
 
   // ========== SENSOR DATA METHODS (GET) ==========
 
@@ -198,14 +341,16 @@ class ApiService {
   Future<bool> controlDoor(String command) async {
     try {
       // Backend expects: {"action": "lock/unlock", "method": "remote"}
-      final response = await http.post(
-        Uri.parse('$baseUrl$endpointDoorControl'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'action': command.toLowerCase(),
-          'method': 'remote',
-        }),
-      ).timeout(timeoutDuration);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$endpointDoorControl'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'action': command.toLowerCase(),
+              'method': 'remote',
+            }),
+          )
+          .timeout(timeoutDuration);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -225,14 +370,16 @@ class ApiService {
   Future<bool> controlLight(String command) async {
     try {
       // Backend expects: {"action": "on/off", "mode": "manual"}
-      final response = await http.post(
-        Uri.parse('$baseUrl$endpointLampControl'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'action': command.toLowerCase(),
-          'mode': 'manual',
-        }),
-      ).timeout(timeoutDuration);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$endpointLampControl'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'action': command.toLowerCase(),
+              'mode': 'manual',
+            }),
+          )
+          .timeout(timeoutDuration);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -254,7 +401,7 @@ class ApiService {
       // Backend expects: {"position": 1-100, "mode": "manual", "action": "open/close"}
       // Validasi backend: min=1, max=100
       final curtainPosition = position.clamp(1, 100);
-      
+
       // Tentukan action berdasarkan position
       String action = '';
       if (position >= 100) {
@@ -262,29 +409,33 @@ class ApiService {
       } else if (position <= 0) {
         action = 'close';
       }
-      
+
       final requestBody = {
         'position': curtainPosition,
         'mode': 'manual',
         if (action.isNotEmpty) 'action': action,
       };
-      
-      print('[API] Sending curtain control: position=$curtainPosition%, action=$action');
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl$endpointCurtainControl'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      ).timeout(timeoutDuration);
+
+      print(
+          '[API] Sending curtain control: position=$curtainPosition%, action=$action');
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$endpointCurtainControl'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(requestBody),
+          )
+          .timeout(timeoutDuration);
 
       print('[API] Curtain control response: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
         print('[API] Curtain control success: ${jsonData['message']}');
         return jsonData['success'] == true;
       } else {
-        print('[API] Curtain control failed: ${response.statusCode} - ${response.body}');
+        print(
+            '[API] Curtain control failed: ${response.statusCode} - ${response.body}');
         return false;
       }
     } catch (e) {
@@ -306,16 +457,19 @@ class ApiService {
         final jsonData = jsonDecode(response.body);
         if (jsonData['data'] != null) {
           final List<dynamic> dataList = jsonData['data'];
-          return dataList.map((item) => TemperatureData(
-            device: 'ESP32-01',
-            sensor: 'DHT22',
-            temperature: (item['temperature'] ?? 0).toDouble(),
-            timestamp: DateTime.parse(item['timestamp']),
-          )).toList();
+          return dataList
+              .map((item) => TemperatureData(
+                    device: 'ESP32-01',
+                    sensor: 'DHT22',
+                    temperature: (item['temperature'] ?? 0).toDouble(),
+                    timestamp: DateTime.parse(item['timestamp']),
+                  ))
+              .toList();
         }
         return [];
       } else {
-        print('[API] Error getting temperature history: ${response.statusCode}');
+        print(
+            '[API] Error getting temperature history: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -334,12 +488,14 @@ class ApiService {
         final jsonData = jsonDecode(response.body);
         if (jsonData['data'] != null) {
           final List<dynamic> dataList = jsonData['data'];
-          return dataList.map((item) => HumidityData(
-            device: 'ESP32-01',
-            sensor: 'DHT22',
-            humidity: (item['humidity'] ?? 0).toDouble(),
-            timestamp: DateTime.parse(item['timestamp']),
-          )).toList();
+          return dataList
+              .map((item) => HumidityData(
+                    device: 'ESP32-01',
+                    sensor: 'DHT22',
+                    humidity: (item['humidity'] ?? 0).toDouble(),
+                    timestamp: DateTime.parse(item['timestamp']),
+                  ))
+              .toList();
         }
         return [];
       } else {
@@ -362,13 +518,15 @@ class ApiService {
         final jsonData = jsonDecode(response.body);
         if (jsonData['data'] != null) {
           final List<dynamic> dataList = jsonData['data'];
-          return dataList.map((item) => GasData(
-            device: 'ESP32-02',
-            sensor: 'MQ-2',
-            gasPpm: item['ppm_value'] ?? 0,
-            status: (item['status'] ?? 'normal').toUpperCase(),
-            timestamp: DateTime.parse(item['timestamp']),
-          )).toList();
+          return dataList
+              .map((item) => GasData(
+                    device: 'ESP32-02',
+                    sensor: 'MQ-2',
+                    gasPpm: item['ppm_value'] ?? 0,
+                    status: (item['status'] ?? 'normal').toUpperCase(),
+                    timestamp: DateTime.parse(item['timestamp']),
+                  ))
+              .toList();
         }
         return [];
       } else {

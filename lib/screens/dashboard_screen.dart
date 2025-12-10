@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/smart_home_provider.dart';
+import '../providers/auth_provider.dart';
 import 'monitoring_screen.dart';
 import 'controlling_screen.dart';
+import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -54,6 +56,7 @@ class DashboardHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<SmartHomeProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -77,6 +80,69 @@ class DashboardHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          // User menu
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle),
+            onSelected: (value) async {
+              if (value == 'logout') {
+                final shouldLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Apakah Anda yakin ingin logout?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldLogout == true && context.mounted) {
+                  await authProvider.logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  }
+                }
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                enabled: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      authProvider.currentUser?.name ?? 'User',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      authProvider.currentUser?.email ?? '',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const Divider(),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, size: 20),
+                    SizedBox(width: 8),
+                    Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -117,7 +183,8 @@ class DashboardHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDoorStatusCard(BuildContext context, SmartHomeProvider provider) {
+  Widget _buildDoorStatusCard(
+      BuildContext context, SmartHomeProvider provider) {
     final isLocked = provider.doorStatus?.isLocked ?? true;
 
     return Card(
@@ -137,7 +204,9 @@ class DashboardHomeScreen extends StatelessWidget {
               isLocked ? 'PINTU TERKUNCI' : 'PINTU TERBUKA',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isLocked ? Colors.green.shade800 : Colors.orange.shade800,
+                    color: isLocked
+                        ? Colors.green.shade800
+                        : Colors.orange.shade800,
                   ),
             ),
             const SizedBox(height: 16),
@@ -175,10 +244,13 @@ class DashboardHomeScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildQuickControlButton(
-                    icon: provider.isLightOn ? Icons.lightbulb : Icons.lightbulb_outline,
+                    icon: provider.isLightOn
+                        ? Icons.lightbulb
+                        : Icons.lightbulb_outline,
                     label: 'Lampu',
                     isOn: provider.isLightOn,
-                    onPressed: provider.isConnected ? provider.toggleLight : null,
+                    onPressed:
+                        provider.isConnected ? provider.toggleLight : null,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -223,7 +295,8 @@ class DashboardHomeScreen extends StatelessWidget {
           Icon(icon, size: 32),
           const SizedBox(height: 8),
           Text(label),
-          if (subtitle != null) Text(subtitle, style: const TextStyle(fontSize: 12)),
+          if (subtitle != null)
+            Text(subtitle, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );

@@ -130,3 +130,89 @@ class AuthResponse {
     );
   }
 }
+
+// ========== ADMIN MODELS ==========
+
+class PendingUsersResponse {
+  final bool success;
+  final String message;
+  final List<User> users;
+
+  PendingUsersResponse({
+    required this.success,
+    required this.message,
+    required this.users,
+  });
+
+  factory PendingUsersResponse.fromJson(Map<String, dynamic> json) {
+    List<User> usersList = [];
+    if (json['data'] != null) {
+      usersList = (json['data'] as List)
+          .map((userJson) => User.fromJson(userJson))
+          .toList();
+    }
+    return PendingUsersResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+      users: usersList,
+    );
+  }
+}
+
+class AdminActionResponse {
+  final bool success;
+  final String message;
+
+  AdminActionResponse({
+    required this.success,
+    required this.message,
+  });
+
+  factory AdminActionResponse.fromJson(Map<String, dynamic> json) {
+    return AdminActionResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+    );
+  }
+}
+
+class UniversalPinResponse {
+  final bool success;
+  final String message;
+  final String? pin;
+
+  UniversalPinResponse({
+    required this.success,
+    required this.message,
+    this.pin,
+  });
+
+  factory UniversalPinResponse.fromJson(Map<String, dynamic> json) {
+    String? pinValue;
+    if (json['data'] != null && json['data']['universal_pin'] != null) {
+      pinValue = json['data']['universal_pin'];
+    }
+    return UniversalPinResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+      pin: pinValue,
+    );
+  }
+}
+
+class SetPinRequest {
+  final String universalPin;
+  final int setBy;
+
+  SetPinRequest({
+    required this.universalPin,
+    required this.setBy,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'universal_pin': universalPin,
+      'set_by': setBy,
+    };
+  }
+}

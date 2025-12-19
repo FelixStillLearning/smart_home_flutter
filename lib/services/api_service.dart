@@ -8,7 +8,7 @@ class ApiService {
   // ========== KONFIGURASI API ==========
   // Untuk Android Emulator gunakan 10.0.2.2 (bukan localhost)
   // Untuk iOS Simulator atau Physical Device, gunakan IP komputer Anda
-  static const String baseUrl = 'http://10.124.88.57:8080';
+  static const String baseUrl = 'http://172.20.10.3:8080';
 
   // API Endpoints - Disesuaikan dengan backend Go
   static const String endpointTemperature = '/api/sensor/temperature';
@@ -555,6 +555,217 @@ class ApiService {
     } catch (e) {
       print('[API] Exception getting gas history: $e');
       return [];
+    }
+  }
+
+  // ========== ADMIN METHODS ==========
+
+  /// Get all pending users (for admin approval)
+  Future<PendingUsersResponse> getPendingUsers() async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return PendingUsersResponse(
+          success: false,
+          message: 'Not authenticated',
+          users: [],
+        );
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/admin/users/pending'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return PendingUsersResponse.fromJson(jsonData);
+      } else {
+        return PendingUsersResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to get pending users',
+          users: [],
+        );
+      }
+    } catch (e) {
+      print('[API] Exception getting pending users: $e');
+      return PendingUsersResponse(
+        success: false,
+        message: 'Connection error',
+        users: [],
+      );
+    }
+  }
+
+  /// Approve user
+  Future<AdminActionResponse> approveUser(int userId) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AdminActionResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/admin/users/$userId/approve'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return AdminActionResponse.fromJson(jsonData);
+      } else {
+        return AdminActionResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to approve user',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception approving user: $e');
+      return AdminActionResponse(
+        success: false,
+        message: 'Connection error',
+      );
+    }
+  }
+
+  /// Reject user
+  Future<AdminActionResponse> rejectUser(int userId) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AdminActionResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/admin/users/$userId/reject'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return AdminActionResponse.fromJson(jsonData);
+      } else {
+        return AdminActionResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to reject user',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception rejecting user: $e');
+      return AdminActionResponse(
+        success: false,
+        message: 'Connection error',
+      );
+    }
+  }
+
+  /// Get universal PIN
+  Future<UniversalPinResponse> getUniversalPin() async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return UniversalPinResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/admin/pin'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return UniversalPinResponse.fromJson(jsonData);
+      } else {
+        return UniversalPinResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to get PIN',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception getting universal PIN: $e');
+      return UniversalPinResponse(
+        success: false,
+        message: 'Connection error',
+      );
+    }
+  }
+
+  /// Set universal PIN
+  Future<AdminActionResponse> setUniversalPin(String pin) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AdminActionResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      // Get current user ID
+      final currentUser = await getSavedUser();
+      if (currentUser == null) {
+        return AdminActionResponse(
+          success: false,
+          message: 'User data not found',
+        );
+      }
+
+      final request = SetPinRequest(
+        universalPin: pin,
+        setBy: currentUser.userId,
+      );
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/admin/pin'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return AdminActionResponse.fromJson(jsonData);
+      } else {
+        return AdminActionResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to set PIN',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception setting universal PIN: $e');
+      return AdminActionResponse(
+        success: false,
+        message: 'Connection error',
+      );
     }
   }
 

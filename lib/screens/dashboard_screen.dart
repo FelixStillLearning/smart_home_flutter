@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import 'monitoring_screen.dart';
 import 'controlling_screen.dart';
 import 'login_screen.dart';
+import 'admin_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -85,7 +86,12 @@ class DashboardHomeScreen extends StatelessWidget {
           PopupMenuButton<String>(
             icon: const Icon(Icons.account_circle),
             onSelected: (value) async {
-              if (value == 'logout') {
+              if (value == 'admin') {
+                // Navigate to admin panel
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminScreen()),
+                );
+              } else if (value == 'logout') {
                 final shouldLogout = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -132,6 +138,17 @@ class DashboardHomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              if (authProvider.currentUser?.isAdmin == true)
+                PopupMenuItem<String>(
+                  value: 'admin',
+                  child: Row(
+                    children: [
+                      Icon(Icons.admin_panel_settings, size: 20),
+                      SizedBox(width: 8),
+                      Text('Admin Panel'),
+                    ],
+                  ),
+                ),
               const PopupMenuItem<String>(
                 value: 'logout',
                 child: Row(

@@ -20,14 +20,14 @@ class MyApp extends StatelessWidget {
         title: 'Smart Home IoT',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF667eea)),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF667eea)),
           useMaterial3: true,
         ),
         home: const SplashScreen(),
         routes: {
-          '/login': (context) => LoginScreen(),
-          '/register': (context) => RegisterScreen(),
-          '/main': (context) => MainScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/main': (context) => const MainScreen(),
         },
       ),
     );
@@ -71,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ],
           ),
         ),
-        child: Center(
+        child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

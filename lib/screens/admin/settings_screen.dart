@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -63,7 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _apiService.setUniversalPin(_newPinController.text);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('PIN berhasil diperbarui'),
             backgroundColor: Colors.green,
           ),
@@ -92,14 +92,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pengaturan'),
-        backgroundColor: Color(0xFF667eea),
+        title: const Text('Pengaturan'),
+        backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -109,11 +109,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          const Row(
                             children: [
                               Icon(
                                 Icons.key,
@@ -130,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'PIN Aktif Saat Ini:',
                             style: TextStyle(
@@ -138,10 +138,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: Colors.grey[600],
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             _currentPin.isEmpty ? '------' : _currentPin,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 8,
@@ -152,27 +152,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
+                            const Text(
                               'Perbarui PIN',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _newPinController,
                               keyboardType: TextInputType.number,
@@ -185,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 counterText: '',
                               ),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 20,
                                 letterSpacing: 4,
                                 fontFamily: 'monospace',
@@ -204,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 return null;
                               },
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _confirmPinController,
                               keyboardType: TextInputType.number,
@@ -217,7 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 counterText: '',
                               ),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 20,
                                 letterSpacing: 4,
                                 fontFamily: 'monospace',
@@ -230,19 +230,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 return null;
                               },
                             ),
-                            SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: _isUpdating ? null : _updatePin,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF667eea),
+                                backgroundColor: const Color(0xFF667eea),
                                 foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                               child: _isUpdating
-                                  ? SizedBox(
+                                  ? const SizedBox(
                                       height: 20,
                                       width: 20,
                                       child: CircularProgressIndicator(
@@ -253,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                       ),
                                     )
-                                  : Text(
+                                  : const Text(
                                       'Perbarui PIN',
                                       style: TextStyle(
                                         fontSize: 16,
@@ -266,9 +266,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.orange[50],
                       borderRadius: BorderRadius.circular(8),
@@ -280,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Icons.warning_amber_rounded,
                           color: Colors.orange[800],
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'PIN ini digunakan sebagai fallback untuk membuka pintu melalui keypad ESP32.',

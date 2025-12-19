@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({Key? key}) : super(key: key);
+  const LogsScreen({super.key});
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
@@ -40,18 +40,18 @@ class _LogsScreenState extends State<LogsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Riwayat Akses'),
-        backgroundColor: Color(0xFF667eea),
+        title: const Text('Riwayat Akses'),
+        backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: _fetchLogs,
           ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _logs.isEmpty
               ? Center(
                   child: Column(
@@ -62,7 +62,7 @@ class _LogsScreenState extends State<LogsScreen> {
                         size: 64,
                         color: Colors.grey[400],
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'Belum ada riwayat akses',
                         style: TextStyle(
@@ -76,7 +76,7 @@ class _LogsScreenState extends State<LogsScreen> {
               : RefreshIndicator(
                   onRefresh: _fetchLogs,
                   child: ListView.builder(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     itemCount: _logs.length,
                     itemBuilder: (context, index) {
                       final log = _logs[index];
@@ -103,7 +103,7 @@ class _LogsScreenState extends State<LogsScreen> {
     final bool isSuccess = status == 'success';
 
     return Card(
-      margin: EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -118,12 +118,12 @@ class _LogsScreenState extends State<LogsScreen> {
         ),
         title: Text(
           userName,
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text('Metode: $method'),
             if (dateTime != null)
               Text(
@@ -133,7 +133,7 @@ class _LogsScreenState extends State<LogsScreen> {
           ],
         ),
         trailing: Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isSuccess ? Colors.green[100] : Colors.red[100],
             borderRadius: BorderRadius.circular(12),

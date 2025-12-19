@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class ControlScreen extends StatefulWidget {
-  const ControlScreen({Key? key}) : super(key: key);
+  const ControlScreen({super.key});
 
   @override
   State<ControlScreen> createState() => _ControlScreenState();
@@ -143,14 +143,14 @@ class _ControlScreenState extends State<ControlScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kontrol Perangkat'),
-        backgroundColor: Color(0xFF667eea),
+        title: const Text('Kontrol Perangkat'),
+        backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
       ),
       body: RefreshIndicator(
         onRefresh: _fetchDeviceStatus,
         child: ListView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           children: [
             _buildDeviceControl(
               icon: Icons.door_front_door,
@@ -163,7 +163,7 @@ class _ControlScreenState extends State<ControlScreen> {
               action2Label: 'Tutup',
               statusText: _doorStatus == 'open' ? 'Terbuka' : 'Tertutup',
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildDeviceControl(
               icon: Icons.lightbulb,
               title: 'Lampu',
@@ -175,7 +175,7 @@ class _ControlScreenState extends State<ControlScreen> {
               action2Label: 'Matikan',
               statusText: _lampStatus == 'on' ? 'Menyala' : 'Mati',
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildDeviceControl(
               icon: Icons.curtains,
               title: 'Gorden',
@@ -212,7 +212,7 @@ class _ControlScreenState extends State<ControlScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             Row(
@@ -222,21 +222,21 @@ class _ControlScreenState extends State<ControlScreen> {
                   size: 40,
                   color: isActive ? Colors.green : Colors.grey,
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Container(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 4,
                         ),
@@ -258,7 +258,7 @@ class _ControlScreenState extends State<ControlScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -267,13 +267,13 @@ class _ControlScreenState extends State<ControlScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: isLoading
-                        ? SizedBox(
+                        ? const SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
@@ -286,12 +286,12 @@ class _ControlScreenState extends State<ControlScreen> {
                         : Text(action1Label),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
                     onPressed: isLoading ? null : onAction2,
                     style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

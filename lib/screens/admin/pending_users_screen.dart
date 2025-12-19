@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 class PendingUsersScreen extends StatefulWidget {
-  const PendingUsersScreen({Key? key}) : super(key: key);
+  const PendingUsersScreen({super.key});
 
   @override
   State<PendingUsersScreen> createState() => _PendingUsersScreenState();
@@ -13,7 +13,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
   final ApiService _apiService = ApiService();
   List<Map<String, dynamic>> _pendingUsers = [];
   bool _isLoading = true;
-  Set<int> _processingUsers = {};
+  final Set<int> _processingUsers = {};
 
   @override
   void initState() {
@@ -50,7 +50,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
       await _apiService.approveUser(userId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('User berhasil disetujui'),
             backgroundColor: Colors.green,
           ),
@@ -77,17 +77,17 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Tolak User'),
-        content: Text('Apakah Anda yakin ingin menolak user ini?'),
+        title: const Text('Tolak User'),
+        content: const Text('Apakah Anda yakin ingin menolak user ini?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Batal'),
+            child: const Text('Batal'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text('Tolak'),
+            child: const Text('Tolak'),
           ),
         ],
       ),
@@ -100,7 +100,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
       await _apiService.rejectUser(userId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('User berhasil ditolak'),
             backgroundColor: Colors.orange,
           ),
@@ -127,18 +127,18 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pending Users'),
-        backgroundColor: Color(0xFF667eea),
+        title: const Text('Pending Users'),
+        backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: _fetchPendingUsers,
           ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _pendingUsers.isEmpty
               ? Center(
                   child: Column(
@@ -149,7 +149,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                         size: 64,
                         color: Colors.green[400],
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'Tidak ada user pending',
                         style: TextStyle(
@@ -157,7 +157,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                           color: Colors.grey[600],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
                         'Semua user sudah diproses',
                         style: TextStyle(
@@ -171,7 +171,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
               : RefreshIndicator(
                   onRefresh: _fetchPendingUsers,
                   child: ListView.builder(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     itemCount: _pendingUsers.length,
                     itemBuilder: (context, index) {
                       final user = _pendingUsers[index];
@@ -179,13 +179,13 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                       final isProcessing = _processingUsers.contains(userId);
 
                       return Card(
-                        margin: EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: 12),
                         elevation: 2,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -198,7 +198,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                                       color: Colors.orange[800],
                                     ),
                                   ),
-                                  SizedBox(width: 12),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -206,12 +206,12 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                                       children: [
                                         Text(
                                           user['name'] ?? '-',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        SizedBox(height: 2),
+                                        const SizedBox(height: 2),
                                         Text(
                                           user['email'] ?? '-',
                                           style: TextStyle(
@@ -224,7 +224,7 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Row(
                                 children: [
                                   Expanded(
@@ -232,8 +232,8 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                                       onPressed: isProcessing
                                           ? null
                                           : () => _approveUser(userId),
-                                      icon: Icon(Icons.check, size: 18),
-                                      label: Text('Setujui'),
+                                      icon: const Icon(Icons.check, size: 18),
+                                      label: const Text('Setujui'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green,
                                         foregroundColor: Colors.white,
@@ -244,17 +244,17 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                                       ),
                                     ),
                                   ),
-                                  SizedBox(width: 12),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: OutlinedButton.icon(
                                       onPressed: isProcessing
                                           ? null
                                           : () => _rejectUser(userId),
-                                      icon: Icon(Icons.close, size: 18),
-                                      label: Text('Tolak'),
+                                      icon: const Icon(Icons.close, size: 18),
+                                      label: const Text('Tolak'),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.red,
-                                        side: BorderSide(color: Colors.red),
+                                        side: const BorderSide(color: Colors.red),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(8),

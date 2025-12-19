@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api';
+  static const String baseUrl = 'https://951c91a979c1.ngrok-free.app/api';
   
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();

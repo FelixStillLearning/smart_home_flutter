@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -52,12 +52,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengambil foto: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -66,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (_faceImageBase64 == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Silakan ambil foto wajah terlebih dahulu'),
           backgroundColor: Colors.orange,
         ),
@@ -89,8 +91,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: Text('Registrasi Berhasil'),
-            content: Text(
+            title: const Text('Registrasi Berhasil'),
+            content: const Text(
               'Akun Anda berhasil dibuat. Menunggu persetujuan admin untuk mengaktifkan akun.',
             ),
             actions: [
@@ -99,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Navigator.of(context).pop();
                   Navigator.of(context).pop();
                 },
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           ),
@@ -123,25 +125,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Daftar Akun'),
-        backgroundColor: Color(0xFF667eea),
+        title: const Text('Daftar Akun'),
+        backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              const Text(
                 'Buat Akun Baru',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Lengkapi data di bawah untuk mendaftar',
                 style: TextStyle(
@@ -149,12 +151,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   color: Colors.grey[600],
                 ),
               ),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Nama Lengkap',
-                  prefixIcon: Icon(Icons.person),
+                  prefixIcon: const Icon(Icons.person),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -166,13 +168,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
+                  prefixIcon: const Icon(Icons.email),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -187,13 +189,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock),
+                  prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -220,13 +222,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
                 decoration: InputDecoration(
                   labelText: 'Konfirmasi Password',
-                  prefixIcon: Icon(Icons.lock_outline),
+                  prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword
@@ -250,23 +252,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey[300]!),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    Text(
+                    const Text(
                       'Foto Wajah',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     if (_faceImage != null)
                       Column(
                         children: [
@@ -279,21 +281,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               fit: BoxFit.cover,
                             ),
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: _pickImage,
-                            icon: Icon(Icons.refresh),
-                            label: Text('Ambil Ulang'),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Ambil Ulang'),
                           ),
                         ],
                       )
                     else
                       ElevatedButton.icon(
                         onPressed: _pickImage,
-                        icon: Icon(Icons.camera_alt),
-                        label: Text('Ambil Foto Wajah'),
+                        icon: const Icon(Icons.camera_alt),
+                        label: const Text('Ambil Foto Wajah'),
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
                           ),
@@ -302,19 +304,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: authProvider.isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF667eea),
+                  backgroundColor: const Color(0xFF667eea),
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: authProvider.isLoading
-                    ? SizedBox(
+                    ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
@@ -324,7 +326,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       )
-                    : Text(
+                    : const Text(
                         'Daftar',
                         style: TextStyle(
                           fontSize: 16,
@@ -332,7 +334,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Akun akan aktif setelah disetujui admin',
                 textAlign: TextAlign.center,

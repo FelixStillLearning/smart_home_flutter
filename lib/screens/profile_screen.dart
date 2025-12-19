@@ -6,7 +6,7 @@ import 'admin/pending_users_screen.dart';
 import 'admin/settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,12 +15,12 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
-        backgroundColor: Color(0xFF667eea),
+        title: const Text('Profile'),
+        backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
       ),
       body: ListView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         children: [
           Card(
             elevation: 2,
@@ -28,10 +28,10 @@ class ProfileScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Padding(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 40,
                     backgroundColor: Color(0xFF667eea),
                     child: Icon(
@@ -40,15 +40,15 @@ class ProfileScreen extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     user?.name ?? '',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     user?.email ?? '',
                     style: TextStyle(
@@ -56,9 +56,9 @@ class ProfileScreen extends StatelessWidget {
                       color: Colors.grey[600],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
                       color: user?.isAdmin ?? false
                           ? Colors.amber[100]
@@ -81,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           if (authProvider.isAdmin) ...[
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             Text(
               'Menu Admin',
               style: TextStyle(
@@ -90,7 +90,7 @@ class ProfileScreen extends StatelessWidget {
                 color: Colors.grey[700],
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             _buildMenuItem(
               context: context,
               icon: Icons.pending_actions,
@@ -100,12 +100,12 @@ class ProfileScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => PendingUsersScreen(),
+                    builder: (context) => const PendingUsersScreen(),
                   ),
                 );
               },
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             _buildMenuItem(
               context: context,
               icon: Icons.settings,
@@ -115,13 +115,13 @@ class ProfileScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SettingsScreen(),
+                    builder: (context) => const SettingsScreen(),
                   ),
                 );
               },
             ),
           ],
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           Text(
             'Akun',
             style: TextStyle(
@@ -130,7 +130,7 @@ class ProfileScreen extends StatelessWidget {
               color: Colors.grey[700],
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           _buildMenuItem(
             context: context,
             icon: Icons.logout,
@@ -140,16 +140,16 @@ class ProfileScreen extends StatelessWidget {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: Text('Logout'),
-                  content: Text('Apakah Anda yakin ingin keluar?'),
+                  title: const Text('Logout'),
+                  content: const Text('Apakah Anda yakin ingin keluar?'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: Text('Batal'),
+                      child: const Text('Batal'),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: Text('Logout'),
+                      child: const Text('Logout'),
                     ),
                   ],
                 ),
@@ -185,15 +185,15 @@ class ProfileScreen extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           icon,
-          color: iconColor ?? Color(0xFF667eea),
+          color: iconColor ?? const Color(0xFF667eea),
           size: 28,
         ),
         title: Text(
           title,
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(subtitle),
-        trailing: Icon(Icons.chevron_right),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );

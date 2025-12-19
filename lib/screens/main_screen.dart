@@ -1,7 +1,5 @@
 // lib/screens/main_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import 'home_screen.dart';
 import 'control_screen.dart';
 import 'monitoring_screen.dart';
@@ -9,7 +7,7 @@ import 'logs_screen.dart';
 import 'profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -19,11 +17,11 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    HomeScreen(),
-    ControlScreen(),
-    MonitoringScreen(),
-    LogsScreen(),
-    ProfileScreen(),
+    const HomeScreen(),
+    const ControlScreen(),
+    const MonitoringScreen(),
+    const LogsScreen(),
+    const ProfileScreen(),
   ];
 
   @override
@@ -38,9 +36,9 @@ class _MainScreenState extends State<MainScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF667eea),
+        selectedItemColor: const Color(0xFF667eea),
         unselectedItemColor: Colors.grey,
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',

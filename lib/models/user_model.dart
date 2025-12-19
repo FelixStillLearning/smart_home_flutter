@@ -79,7 +79,9 @@ class RegisterRequest {
     }
 
     if (faceImage != null && faceImage!.isNotEmpty) {
-      data['face_image'] = faceImage;
+      // Clean base64 string - remove any whitespace/newlines
+      final cleanFaceImage = faceImage!.replaceAll(RegExp(r'\\s'), '');
+      data['face_image'] = cleanFaceImage;
     }
 
     return data;

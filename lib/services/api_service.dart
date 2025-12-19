@@ -8,7 +8,7 @@ class ApiService {
   // ========== KONFIGURASI API ==========
   // Untuk Android Emulator gunakan 10.0.2.2 (bukan localhost)
   // Untuk iOS Simulator atau Physical Device, gunakan IP komputer Anda
-  static const String baseUrl = 'http://172.20.10.3:8080';
+  static const String baseUrl = 'http://10.124.88.57:8080';
 
   // API Endpoints - Disesuaikan dengan backend Go
   static const String endpointTemperature = '/api/sensor/temperature';
@@ -26,6 +26,8 @@ class ApiService {
 
   // Timeout duration
   static const Duration timeoutDuration = Duration(seconds: 10);
+  static const Duration authTimeoutDuration =
+      Duration(seconds: 60); // Longer for face validation + enrollment
 
   // Token storage key
   static const String _tokenKey = 'auth_token';
@@ -71,13 +73,30 @@ class ApiService {
   /// Register new user
   Future<AuthResponse> register(RegisterRequest request) async {
     try {
+      print('[API] Starting registration...');
+      print('[API] URL: $baseUrl$endpointRegister');
+      print('[API] Name: ${request.name}');
+      print('[API] Email: ${request.email}');
+      print(
+          '[API] Has face image: ${request.faceImage != null && request.faceImage!.isNotEmpty}');
+      if (request.faceImage != null) {
+        print(
+            '[API] Face image length: ${request.faceImage!.length} characters');
+      }
+
+      final requestBody = jsonEncode(request.toJson());
+      print('[API] Request body size: ${requestBody.length} bytes');
+
       final response = await http
           .post(
             Uri.parse('$baseUrl$endpointRegister'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(request.toJson()),
+            body: requestBody,
           )
-          .timeout(timeoutDuration);
+          .timeout(authTimeoutDuration);
+
+      print('[API] Response status: ${response.statusCode}');
+      print('[API] Response body: ${response.body}');
 
       final jsonData = jsonDecode(response.body);
 

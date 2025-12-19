@@ -1,29 +1,34 @@
 name: smart_home_iot
 description: Smart Home IoT App with MQTT integration - UTS Mobile Programming
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # State Management
   provider: ^6.1.1
-  
+
   # HTTP Client
   http: ^1.1.0
-  
+
   # UI & Icons
   cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0
-  fl_chart: ^0.66.0  # Untuk grafik monitoring
-  
+  fl_chart: ^0.66.0 # Untuk grafik monitoring
+
   # Utilities
-  intl: ^0.18.1  # Untuk format tanggal
-  shared_preferences: ^2.2.2  # Untuk menyimpan settings
+  intl: ^0.18.1 # Untuk format tanggal
+  shared_preferences: ^2.2.2 # Untuk menyimpan settings
+
+  # Camera & Image
+  image_picker: ^1.0.7 # Untuk mengambil foto dari kamera/gallery
+  camera: ^0.10.5+9 # Untuk akses kamera
+  image: ^4.1.7 # Untuk resize dan compress image
 
 dev_dependencies:
   flutter_test:
@@ -32,7 +37,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+
   # Assets (icon, images, dll)
   # assets:
   #   - assets/images/

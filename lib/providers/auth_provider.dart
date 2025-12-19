@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
+import '../services/face_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final FaceService _faceService = FaceService();
 
   User? _currentUser;
   String? _token;
@@ -38,6 +40,48 @@ class AuthProvider with ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// Register new user with face recognition
+  Future<bool> registerWithFace({
+    required String name,
+    required String email,
+    required String password,
+    required String faceImage,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final request = RegisterRequest(
+        name: name,
+        email: email,
+        password: password,
+        faceImage: faceImage,
+      );
+
+      final response = await _apiService.register(request);
+
+      if (response.success) {
+        _currentUser = response.user;
+        // Note: Registration doesn't return token, user needs approval
+        _errorMessage = null;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = response.error ?? response.message;
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Registration failed: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   /// Register new user

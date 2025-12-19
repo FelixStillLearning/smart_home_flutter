@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../providers/auth_provider.dart';
+import '../services/face_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,8 +18,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _imagePicker = ImagePicker();
+  final _faceService = FaceService();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  File? _faceImage;
+  String? _base64FaceImage;
+  bool _isProcessing = false;
 
   @override
   void dispose() {
@@ -28,17 +37,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
+    print('[RegisterScreen] Register button clicked');
+
     if (!_formKey.currentState!.validate()) {
+      print('[RegisterScreen] Form validation failed');
       return;
     }
 
+    // Validate face image
+    if (_faceImage == null || _base64FaceImage == null) {
+      print('[RegisterScreen] Face image missing');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan ambil foto wajah Anda terlebih dahulu'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    print('[RegisterScreen] Starting registration with face...');
+    print('[RegisterScreen] Name: ${_nameController.text.trim()}');
+    print('[RegisterScreen] Email: ${_emailController.text.trim()}');
+    print('[RegisterScreen] Has face image: ${_base64FaceImage != null}');
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final success = await authProvider.register(
+    final success = await authProvider.registerWithFace(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      faceImage: _base64FaceImage!,
     );
+
+    print('[RegisterScreen] Registration result: $success');
 
     if (!mounted) return;
 
@@ -55,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           title: const Text('Registrasi Berhasil!'),
           content: const Text(
-            'Akun Anda telah dibuat. Silakan tunggu approval dari admin untuk dapat login.',
+            'Akun Anda telah dibuat dengan face recognition. Silakan tunggu approval dari admin untuk dapat login.',
             textAlign: TextAlign.center,
           ),
           actions: [
@@ -75,6 +107,138 @@ class _RegisterScreenState extends State<RegisterScreen> {
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'Registrasi gagal'),
           backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _takePicture() async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      // Check Python service availability first
+      final serviceAvailable = await _faceService.isServiceAvailable();
+
+      if (!serviceAvailable) {
+        setState(() {
+          _isProcessing = false;
+        });
+
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            icon: const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            title: const Text('Service Tidak Tersedia'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                    'Python Face Recognition Service tidak dapat dijangkau.'),
+                const SizedBox(height: 12),
+                const Text('Pastikan:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('• Python service running di ${FaceService.pythonBaseUrl}',
+                    style: const TextStyle(fontSize: 12)),
+                const Text('• IP address sudah benar',
+                    style: TextStyle(fontSize: 12)),
+                const Text('• Device terhubung ke jaringan yang sama',
+                    style: TextStyle(fontSize: 12)),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      // Take picture from camera
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 85,
+      );
+
+      if (photo == null) {
+        setState(() {
+          _isProcessing = false;
+        });
+        return;
+      }
+
+      final File imageFile = File(photo.path);
+
+      // Validate face with Python service
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Expanded(child: Text('Memvalidasi wajah...\nMohon tunggu...')),
+            ],
+          ),
+        ),
+      );
+
+      final validationResult = await _faceService.validateFace(imageFile);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (validationResult.success && validationResult.faceValid) {
+        setState(() {
+          _faceImage = imageFile;
+          _base64FaceImage = validationResult.base64Image;
+          _isProcessing = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Wajah terdeteksi dan valid!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setState(() {
+          _isProcessing = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(validationResult.error ?? 'Wajah tidak valid'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isProcessing = false;
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -269,6 +433,95 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             }
                             return null;
                           },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Face Image Section
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.grey.shade50,
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.face,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Foto Wajah',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              if (_faceImage != null) ...[
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    _faceImage!,
+                                    height: 200,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.check_circle,
+                                        color: Colors.green, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Wajah tervalidasi',
+                                      style: TextStyle(
+                                        color: Colors.green.shade700,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                Icon(
+                                  Icons.photo_camera,
+                                  size: 60,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Belum ada foto',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              ],
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: _isProcessing ? null : _takePicture,
+                                icon: const Icon(Icons.camera_alt),
+                                label: Text(_faceImage == null
+                                    ? 'Ambil Foto Wajah'
+                                    : 'Ambil Ulang'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue.shade600,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Pastikan wajah Anda terlihat jelas',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 24),
 

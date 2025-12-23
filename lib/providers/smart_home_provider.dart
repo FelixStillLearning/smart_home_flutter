@@ -130,40 +130,40 @@ class SmartHomeProvider with ChangeNotifier {
   /// Fetch data sensor suhu
   Future<void> fetchTemperature() async {
     final data = await _apiService.getTemperature();
-    if (data != null) {
-      _handleTemperatureData(data);
+    if (data != null && data['data'] != null) {
+      _handleTemperatureData(TemperatureData.fromJson(data['data']));
     }
   }
 
   /// Fetch data sensor kelembaban
   Future<void> fetchHumidity() async {
     final data = await _apiService.getHumidity();
-    if (data != null) {
-      _handleHumidityData(data);
+    if (data != null && data['data'] != null) {
+      _handleHumidityData(HumidityData.fromJson(data['data']));
     }
   }
 
   /// Fetch data sensor gas
   Future<void> fetchGas() async {
     final data = await _apiService.getGas();
-    if (data != null) {
-      _handleGasData(data);
+    if (data != null && data['data'] != null) {
+      _handleGasData(GasData.fromJson(data['data']));
     }
   }
 
   /// Fetch data sensor cahaya
   Future<void> fetchLight() async {
     final data = await _apiService.getLight();
-    if (data != null) {
-      _handleLightData(data);
+    if (data != null && data['data'] != null) {
+      _handleLightData(LightData.fromJson(data['data']));
     }
   }
 
   /// Fetch status pintu
   Future<void> fetchDoorStatus() async {
     final data = await _apiService.getDoorStatus();
-    if (data != null) {
-      _handleDoorStatusData(data);
+    if (data != null && data['data'] != null) {
+      _handleDoorStatusData(DoorStatus.fromJson(data['data']));
     }
   }
 
@@ -175,17 +175,23 @@ class SmartHomeProvider with ChangeNotifier {
     
     if (tempHistory.isNotEmpty) {
       _temperatureHistory.clear();
-      _temperatureHistory.addAll(tempHistory);
+      _temperatureHistory.addAll(
+        tempHistory.map((e) => TemperatureData.fromJson(e)).toList()
+      );
     }
     
     if (humHistory.isNotEmpty) {
       _humidityHistory.clear();
-      _humidityHistory.addAll(humHistory);
+      _humidityHistory.addAll(
+        humHistory.map((e) => HumidityData.fromJson(e)).toList()
+      );
     }
     
     if (gasHistory.isNotEmpty) {
       _gasHistory.clear();
-      _gasHistory.addAll(gasHistory);
+      _gasHistory.addAll(
+        gasHistory.map((e) => GasData.fromJson(e)).toList()
+      );
     }
     
     notifyListeners();
@@ -250,9 +256,9 @@ class SmartHomeProvider with ChangeNotifier {
     if (!_isConnected) return;
     
     final command = _doorStatus?.isLocked ?? true ? 'UNLOCK' : 'LOCK';
-    final success = await _apiService.controlDoor(command);
+    final response = await _apiService.controlDoor(command);
     
-    if (success) {
+    if (response['success'] == true) {
       // Refresh door status setelah kontrol
       await Future.delayed(const Duration(milliseconds: 500));
       await fetchDoorStatus();
@@ -262,9 +268,9 @@ class SmartHomeProvider with ChangeNotifier {
   void lockDoor() async {
     if (!_isConnected) return;
     
-    final success = await _apiService.controlDoor('LOCK');
+    final response = await _apiService.controlDoor('LOCK');
     
-    if (success) {
+    if (response['success'] == true) {
       await Future.delayed(const Duration(milliseconds: 500));
       await fetchDoorStatus();
     }
@@ -273,9 +279,9 @@ class SmartHomeProvider with ChangeNotifier {
   void unlockDoor() async {
     if (!_isConnected) return;
     
-    final success = await _apiService.controlDoor('UNLOCK');
+    final response = await _apiService.controlDoor('UNLOCK');
     
-    if (success) {
+    if (response['success'] == true) {
       await Future.delayed(const Duration(milliseconds: 500));
       await fetchDoorStatus();
     }
@@ -286,9 +292,9 @@ class SmartHomeProvider with ChangeNotifier {
     
     _isLightOn = !_isLightOn;
     final command = _isLightOn ? 'ON' : 'OFF';
-    final success = await _apiService.controlLight(command);
+    final response = await _apiService.controlLight(command);
     
-    if (!success) {
+    if (response['success'] != true) {
       // Rollback jika gagal
       _isLightOn = !_isLightOn;
     }
@@ -301,9 +307,9 @@ class SmartHomeProvider with ChangeNotifier {
     
     _isLightOn = isOn;
     final command = isOn ? 'ON' : 'OFF';
-    final success = await _apiService.controlLight(command);
+    final response = await _apiService.controlLight(command);
     
-    if (!success) {
+    if (response['success'] != true) {
       // Rollback jika gagal
       _isLightOn = !isOn;
     }
@@ -318,9 +324,9 @@ class SmartHomeProvider with ChangeNotifier {
     _curtainPosition = position.clamp(0, 100);
     notifyListeners();
     
-    final success = await _apiService.controlCurtain(_curtainPosition);
+    final response = await _apiService.controlCurtain(_curtainPosition.toString());
     
-    if (!success) {
+    if (response['success'] != true) {
       // Rollback jika gagal
       _curtainPosition = previousPosition;
       notifyListeners();

@@ -1,791 +1,349 @@
+// lib/services/api_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/sensor_models.dart';
-import '../models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // ========== KONFIGURASI API ==========
-  // Untuk Android Emulator gunakan 10.0.2.2 (bukan localhost)
-  // Untuk iOS Simulator atau Physical Device, gunakan IP komputer Anda
-  static const String baseUrl = 'http://172.20.10.3:8080';
-
-  // API Endpoints - Disesuaikan dengan backend Go
-  static const String endpointTemperature = '/api/sensor/temperature';
-  static const String endpointHumidity = '/api/sensor/humidity';
-  static const String endpointGas = '/api/sensor/gas';
-  static const String endpointLight = '/api/sensor/light';
-  static const String endpointDoor = '/api/device/door/latest';
-  static const String endpointDoorControl = '/api/control/door';
-  static const String endpointLampControl = '/api/control/lamp';
-  static const String endpointCurtainControl = '/api/control/curtain';
-
-  // Auth Endpoints
-  static const String endpointRegister = '/api/auth/register';
-  static const String endpointLogin = '/api/auth/login';
-
-  // Timeout duration
-  static const Duration timeoutDuration = Duration(seconds: 10);
-  static const Duration authTimeoutDuration =
-      Duration(seconds: 60); // Longer for face validation + enrollment
-
-  // Token storage key
-  static const String _tokenKey = 'auth_token';
-  static const String _userKey = 'user_data';
-
-  // ========== AUTH METHODS ==========
-
-  /// Save token to local storage
-  Future<void> _saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-  }
-
-  /// Get saved token
+  static const String baseUrl = 'http://192.168.1.129:8080/api';
+  
+  // Singleton pattern
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+  ApiService._internal();
+  
+  String? _token;
+  
+  // Get token dari SharedPreferences
   Future<String?> getToken() async {
+    if (_token != null) return _token;
+    
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    _token = prefs.getString('auth_token');
+    return _token;
   }
-
-  /// Save user data to local storage
-  Future<void> _saveUser(User user) async {
+  
+  // Set token ke SharedPreferences
+  Future<void> setToken(String token) async {
+    _token = token;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+    await prefs.setString('auth_token', token);
   }
-
-  /// Get saved user data
-  Future<User?> getSavedUser() async {
+  
+  // Clear token
+  Future<void> clearToken() async {
+    _token = null;
     final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString(_userKey);
-    if (userJson != null) {
-      return User.fromJson(jsonDecode(userJson));
-    }
-    return null;
+    await prefs.remove('auth_token');
+    await prefs.remove('user_data');
   }
-
-  /// Clear token and user data (logout)
-  Future<void> clearAuth() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userKey);
-  }
-
-  /// Register new user
-  Future<AuthResponse> register(RegisterRequest request) async {
-    try {
-      print('[API] Starting registration...');
-      print('[API] URL: $baseUrl$endpointRegister');
-      print('[API] Name: ${request.name}');
-      print('[API] Email: ${request.email}');
-      print(
-          '[API] Has face image: ${request.faceImage != null && request.faceImage!.isNotEmpty}');
-      if (request.faceImage != null) {
-        print(
-            '[API] Face image length: ${request.faceImage!.length} characters');
-      }
-
-      final requestBody = jsonEncode(request.toJson());
-      print('[API] Request body size: ${requestBody.length} bytes');
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl$endpointRegister'),
-            headers: {'Content-Type': 'application/json'},
-            body: requestBody,
-          )
-          .timeout(authTimeoutDuration);
-
-      print('[API] Response status: ${response.statusCode}');
-      print('[API] Response body: ${response.body}');
-
-      final jsonData = jsonDecode(response.body);
-
-      if (response.statusCode == 201) {
-        // Registration successful
-        final authResponse = AuthResponse.fromJson(jsonData);
-
-        // Save user data if available
-        if (authResponse.user != null) {
-          await _saveUser(authResponse.user!);
-        }
-
-        return authResponse;
-      } else {
-        // Registration failed
-        return AuthResponse(
-          success: false,
-          message: jsonData['error'] ?? 'Registration failed',
-          error: jsonData['error'],
-        );
-      }
-    } catch (e) {
-      print('[API] Exception during registration: $e');
-      return AuthResponse(
-        success: false,
-        message: 'Connection error',
-        error: e.toString(),
-      );
-    }
-  }
-
-  /// Login user
-  Future<AuthResponse> login(LoginRequest request) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl$endpointLogin'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(request.toJson()),
-          )
-          .timeout(timeoutDuration);
-
-      final jsonData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        // Login successful
-        final authResponse = AuthResponse.fromJson(jsonData);
-
-        // Save token and user data
-        if (authResponse.token != null) {
-          await _saveToken(authResponse.token!);
-        }
-        if (authResponse.user != null) {
-          await _saveUser(authResponse.user!);
-        }
-
-        return authResponse;
-      } else {
-        // Login failed
-        return AuthResponse(
-          success: false,
-          message: jsonData['error'] ?? 'Login failed',
-          error: jsonData['error'],
-        );
-      }
-    } catch (e) {
-      print('[API] Exception during login: $e');
-      return AuthResponse(
-        success: false,
-        message: 'Connection error',
-        error: e.toString(),
-      );
-    }
-  }
-
-  /// Logout user
-  Future<void> logout() async {
-    await clearAuth();
-  }
-
-  /// Check if user is logged in
-  Future<bool> isLoggedIn() async {
+  
+  // Get headers dengan auth token
+  Future<Map<String, String>> _getHeaders() async {
     final token = await getToken();
-    return token != null && token.isNotEmpty;
-  }
-
-  // ========== SENSOR DATA METHODS (GET) ==========
-
-  /// Get data sensor suhu
-  Future<TemperatureData?> getTemperature() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointTemperature?limit=1'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        // Backend returns: {"data": [{"temp_id": 1, "temperature": 28.5, "timestamp": "..."}]}
-        if (jsonData['data'] != null && (jsonData['data'] as List).isNotEmpty) {
-          final latestData = (jsonData['data'] as List).first;
-          return TemperatureData(
-            device: 'ESP32-01',
-            sensor: 'DHT22',
-            temperature: (latestData['temperature'] ?? 0).toDouble(),
-            timestamp: DateTime.parse(latestData['timestamp']),
-          );
-        }
-        return null;
-      } else {
-        print('[API] Error getting temperature: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('[API] Exception getting temperature: $e');
-      return null;
-    }
-  }
-
-  /// Get data sensor kelembaban
-  Future<HumidityData?> getHumidity() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointHumidity?limit=1'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        // Backend returns: {"data": [{"humid_id": 1, "humidity": 65.3, "timestamp": "..."}]}
-        if (jsonData['data'] != null && (jsonData['data'] as List).isNotEmpty) {
-          final latestData = (jsonData['data'] as List).first;
-          return HumidityData(
-            device: 'ESP32-01',
-            sensor: 'DHT22',
-            humidity: (latestData['humidity'] ?? 0).toDouble(),
-            timestamp: DateTime.parse(latestData['timestamp']),
-          );
-        }
-        return null;
-      } else {
-        print('[API] Error getting humidity: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('[API] Exception getting humidity: $e');
-      return null;
-    }
-  }
-
-  /// Get data sensor gas
-  Future<GasData?> getGas() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointGas?limit=1'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        // Backend returns: {"data": [{"gas_id": 1, "ppm_value": 150, "status": "normal", "timestamp": "..."}]}
-        if (jsonData['data'] != null && (jsonData['data'] as List).isNotEmpty) {
-          final latestData = (jsonData['data'] as List).first;
-          return GasData(
-            device: 'ESP32-02',
-            sensor: 'MQ-2',
-            gasPpm: latestData['ppm_value'] ?? 0,
-            status: (latestData['status'] ?? 'normal').toUpperCase(),
-            timestamp: DateTime.parse(latestData['timestamp']),
-          );
-        }
-        return null;
-      } else {
-        print('[API] Error getting gas: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('[API] Exception getting gas: $e');
-      return null;
-    }
-  }
-
-  /// Get data sensor cahaya
-  Future<LightData?> getLight() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointLight?limit=1'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        // Backend returns: {"data": [{"light_id": 1, "lux_value": 450, "timestamp": "..."}]}
-        if (jsonData['data'] != null && (jsonData['data'] as List).isNotEmpty) {
-          final latestData = (jsonData['data'] as List).first;
-          return LightData(
-            device: 'ESP32-03',
-            sensor: 'LDR',
-            lightLux: latestData['lux_value'] ?? 0,
-            timestamp: DateTime.parse(latestData['timestamp']),
-          );
-        }
-        return null;
-      } else {
-        print('[API] Error getting light: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('[API] Exception getting light: $e');
-      return null;
-    }
-  }
-
-  /// Get status pintu
-  Future<DoorStatus?> getDoorStatus() async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointDoor'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        // Backend returns: {"success": true, "data": {"door_id": 1, "status": "locked", "method": "remote", "timestamp": "..."}}
-        if (jsonData['success'] == true && jsonData['data'] != null) {
-          final data = jsonData['data'];
-          return DoorStatus(
-            device: 'SmartLock-01',
-            status: data['status'] ?? 'locked',
-            timestamp: DateTime.parse(data['timestamp']),
-          );
-        }
-        return null;
-      } else {
-        print('[API] Error getting door status: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('[API] Exception getting door status: $e');
-      return null;
-    }
-  }
-
-  /// Get semua data sensor sekaligus
-  Future<Map<String, dynamic>> getAllSensorData() async {
-    final results = await Future.wait([
-      getTemperature(),
-      getHumidity(),
-      getGas(),
-      getLight(),
-      getDoorStatus(),
-    ]);
-
     return {
-      'temperature': results[0],
-      'humidity': results[1],
-      'gas': results[2],
-      'light': results[3],
-      'door': results[4],
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
     };
   }
-
-  // ========== CONTROL METHODS (POST) ==========
-
-  /// Kontrol pintu (LOCK/UNLOCK)
-  Future<bool> controlDoor(String command) async {
-    try {
-      // Backend expects: {"action": "lock/unlock", "method": "remote"}
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl$endpointDoorControl'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'action': command.toLowerCase(),
-              'method': 'remote',
-            }),
-          )
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        print('[API] Door control success: $command - ${jsonData['message']}');
-        return jsonData['success'] == true;
-      } else {
-        print('[API] Door control failed: ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      print('[API] Exception controlling door: $e');
-      return false;
-    }
+  
+  // Login
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+    
+    return _handleResponse(response);
   }
-
-  /// Kontrol lampu (ON/OFF)
-  Future<bool> controlLight(String command) async {
-    try {
-      // Backend expects: {"action": "on/off", "mode": "manual"}
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl$endpointLampControl'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'action': command.toLowerCase(),
-              'mode': 'manual',
-            }),
-          )
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        print('[API] Light control success: $command - ${jsonData['message']}');
-        return jsonData['success'] == true;
-      } else {
-        print('[API] Light control failed: ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      print('[API] Exception controlling light: $e');
-      return false;
-    }
+  
+  // Register
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+    String? faceImage,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+        if (faceImage != null) 'face_image': faceImage,
+      }),
+    );
+    
+    return _handleResponse(response);
   }
-
-  /// Kontrol tirai (SET_POSITION)
-  Future<bool> controlCurtain(int position) async {
-    try {
-      // Backend expects: {"position": 1-100, "mode": "manual", "action": "open/close"}
-      // Validasi backend: min=1, max=100
-      final curtainPosition = position.clamp(1, 100);
-
-      // Tentukan action berdasarkan position
-      String action = '';
-      if (position >= 100) {
-        action = 'open';
-      } else if (position <= 0) {
-        action = 'close';
-      }
-
-      final requestBody = {
-        'position': curtainPosition,
-        'mode': 'manual',
-        if (action.isNotEmpty) 'action': action,
-      };
-
-      print(
-          '[API] Sending curtain control: position=$curtainPosition%, action=$action');
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl$endpointCurtainControl'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(requestBody),
-          )
-          .timeout(timeoutDuration);
-
-      print('[API] Curtain control response: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        print('[API] Curtain control success: ${jsonData['message']}');
-        return jsonData['success'] == true;
-      } else {
-        print(
-            '[API] Curtain control failed: ${response.statusCode} - ${response.body}');
-        return false;
-      }
-    } catch (e) {
-      print('[API] Exception controlling curtain: $e');
-      return false;
-    }
+  
+  // Get pending users (admin only)
+  Future<Map<String, dynamic>> getPendingUsers() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/users/pending'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
   }
-
-  // ========== HISTORICAL DATA METHODS ==========
-
-  /// Get historical data untuk grafik (opsional)
-  Future<List<TemperatureData>> getTemperatureHistory({int limit = 20}) async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointTemperature?limit=$limit'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        if (jsonData['data'] != null) {
-          final List<dynamic> dataList = jsonData['data'];
-          return dataList
-              .map((item) => TemperatureData(
-                    device: 'ESP32-01',
-                    sensor: 'DHT22',
-                    temperature: (item['temperature'] ?? 0).toDouble(),
-                    timestamp: DateTime.parse(item['timestamp']),
-                  ))
-              .toList();
-        }
-        return [];
-      } else {
-        print(
-            '[API] Error getting temperature history: ${response.statusCode}');
-        return [];
-      }
-    } catch (e) {
-      print('[API] Exception getting temperature history: $e');
-      return [];
-    }
+  
+  // Approve user (admin only)
+  Future<Map<String, dynamic>> approveUser(int userId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/user/$userId/approve'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
   }
-
-  Future<List<HumidityData>> getHumidityHistory({int limit = 20}) async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointHumidity?limit=$limit'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        if (jsonData['data'] != null) {
-          final List<dynamic> dataList = jsonData['data'];
-          return dataList
-              .map((item) => HumidityData(
-                    device: 'ESP32-01',
-                    sensor: 'DHT22',
-                    humidity: (item['humidity'] ?? 0).toDouble(),
-                    timestamp: DateTime.parse(item['timestamp']),
-                  ))
-              .toList();
-        }
-        return [];
-      } else {
-        print('[API] Error getting humidity history: ${response.statusCode}');
-        return [];
-      }
-    } catch (e) {
-      print('[API] Exception getting humidity history: $e');
-      return [];
-    }
+  
+  // Reject user (admin only)
+  Future<Map<String, dynamic>> rejectUser(int userId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/user/$userId/reject'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
   }
-
-  Future<List<GasData>> getGasHistory({int limit = 20}) async {
-    try {
-      final response = await http
-          .get(Uri.parse('$baseUrl$endpointGas?limit=$limit'))
-          .timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        if (jsonData['data'] != null) {
-          final List<dynamic> dataList = jsonData['data'];
-          return dataList
-              .map((item) => GasData(
-                    device: 'ESP32-02',
-                    sensor: 'MQ-2',
-                    gasPpm: item['ppm_value'] ?? 0,
-                    status: (item['status'] ?? 'normal').toUpperCase(),
-                    timestamp: DateTime.parse(item['timestamp']),
-                  ))
-              .toList();
-        }
-        return [];
-      } else {
-        print('[API] Error getting gas history: ${response.statusCode}');
-        return [];
-      }
-    } catch (e) {
-      print('[API] Exception getting gas history: $e');
-      return [];
-    }
+  
+  // Get universal PIN (admin only)
+  Future<Map<String, dynamic>> getUniversalPin() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/pin'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
   }
-
-  // ========== ADMIN METHODS ==========
-
-  /// Get all pending users (for admin approval)
-  Future<PendingUsersResponse> getPendingUsers() async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return PendingUsersResponse(
-          success: false,
-          message: 'Not authenticated',
-          users: [],
-        );
-      }
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/admin/users/pending'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      ).timeout(timeoutDuration);
-
-      final jsonData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return PendingUsersResponse.fromJson(jsonData);
-      } else {
-        return PendingUsersResponse(
-          success: false,
-          message: jsonData['error'] ?? 'Failed to get pending users',
-          users: [],
-        );
-      }
-    } catch (e) {
-      print('[API] Exception getting pending users: $e');
-      return PendingUsersResponse(
-        success: false,
-        message: 'Connection error',
-        users: [],
-      );
-    }
+  
+  // Set universal PIN (admin only)
+  Future<Map<String, dynamic>> setUniversalPin(String pin) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/pin'),
+      headers: await _getHeaders(),
+      body: jsonEncode({'pin': pin}),
+    );
+    
+    return _handleResponse(response);
   }
-
-  /// Approve user
-  Future<AdminActionResponse> approveUser(int userId) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return AdminActionResponse(
-          success: false,
-          message: 'Not authenticated',
-        );
-      }
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/admin/users/$userId/approve'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(timeoutDuration);
-
-      final jsonData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return AdminActionResponse.fromJson(jsonData);
-      } else {
-        return AdminActionResponse(
-          success: false,
-          message: jsonData['error'] ?? 'Failed to approve user',
-        );
-      }
-    } catch (e) {
-      print('[API] Exception approving user: $e');
-      return AdminActionResponse(
-        success: false,
-        message: 'Connection error',
-      );
-    }
+  
+  // Get door status
+  Future<Map<String, dynamic>> getDoorStatus() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/door/status'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
   }
-
-  /// Reject user
-  Future<AdminActionResponse> rejectUser(int userId) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return AdminActionResponse(
-          success: false,
-          message: 'Not authenticated',
-        );
-      }
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/admin/users/$userId/reject'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(timeoutDuration);
-
-      final jsonData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return AdminActionResponse.fromJson(jsonData);
-      } else {
-        return AdminActionResponse(
-          success: false,
-          message: jsonData['error'] ?? 'Failed to reject user',
-        );
-      }
-    } catch (e) {
-      print('[API] Exception rejecting user: $e');
-      return AdminActionResponse(
-        success: false,
-        message: 'Connection error',
-      );
-    }
+  
+  // Control door
+  Future<Map<String, dynamic>> controlDoor(String action) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/door/control'),
+      headers: await _getHeaders(),
+      body: jsonEncode({'action': action}),
+    );
+    
+    return _handleResponse(response);
   }
-
-  /// Get universal PIN
-  Future<UniversalPinResponse> getUniversalPin() async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return UniversalPinResponse(
-          success: false,
-          message: 'Not authenticated',
-        );
-      }
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/admin/pin'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(timeoutDuration);
-
-      final jsonData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return UniversalPinResponse.fromJson(jsonData);
-      } else {
-        return UniversalPinResponse(
-          success: false,
-          message: jsonData['error'] ?? 'Failed to get PIN',
-        );
-      }
-    } catch (e) {
-      print('[API] Exception getting universal PIN: $e');
-      return UniversalPinResponse(
-        success: false,
-        message: 'Connection error',
-      );
-    }
+  
+  // Get lamp status
+  Future<Map<String, dynamic>> getLampStatus() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/lamp/status'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
   }
-
-  /// Set universal PIN
-  Future<AdminActionResponse> setUniversalPin(String pin) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return AdminActionResponse(
-          success: false,
-          message: 'Not authenticated',
-        );
-      }
-
-      // Get current user ID
-      final currentUser = await getSavedUser();
-      if (currentUser == null) {
-        return AdminActionResponse(
-          success: false,
-          message: 'User data not found',
-        );
-      }
-
-      final request = SetPinRequest(
-        universalPin: pin,
-        setBy: currentUser.userId,
-      );
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/admin/pin'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode(request.toJson()),
-          )
-          .timeout(timeoutDuration);
-
-      final jsonData = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return AdminActionResponse.fromJson(jsonData);
-      } else {
-        return AdminActionResponse(
-          success: false,
-          message: jsonData['error'] ?? 'Failed to set PIN',
-        );
-      }
-    } catch (e) {
-      print('[API] Exception setting universal PIN: $e');
-      return AdminActionResponse(
-        success: false,
-        message: 'Connection error',
-      );
-    }
+  
+  // Control lamp
+  Future<Map<String, dynamic>> controlLamp(String action) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/lamp/control'),
+      headers: await _getHeaders(),
+      body: jsonEncode({'action': action}),
+    );
+    
+    return _handleResponse(response);
   }
-
-  // ========== HEALTH CHECK ==========
-
-  /// Check apakah backend API online
+  
+  // Get curtain status
+  Future<Map<String, dynamic>> getCurtainStatus() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/curtain/status'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
+  }
+  
+  // Control curtain
+  Future<Map<String, dynamic>> controlCurtain(String action) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/curtain/control'),
+      headers: await _getHeaders(),
+      body: jsonEncode({'action': action}),
+    );
+    
+    return _handleResponse(response);
+  }
+  
+  // Get sensor data
+  Future<Map<String, dynamic>> getSensorData(String sensorType) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/$sensorType'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
+  }
+  
+  // Get access logs
+  Future<Map<String, dynamic>> getAccessLogs({int limit = 20}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/access-logs?limit=$limit'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
+  }
+  
+  // Check backend health
   Future<bool> checkHealth() async {
     try {
-      final response = await http
-          .get(Uri.parse('$baseUrl/health'))
-          .timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        return jsonData['status'] == 'healthy';
-      }
-      return false;
+      final response = await http.get(
+        Uri.parse('$baseUrl/health'),
+        headers: await _getHeaders(),
+      ).timeout(const Duration(seconds: 5));
+      
+      return response.statusCode == 200;
     } catch (e) {
       print('[API] Health check failed: $e');
       return false;
+    }
+  }
+  
+  // Get all sensor data
+  Future<Map<String, dynamic>> getAllSensorData() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/sensors/all'),
+      headers: await _getHeaders(),
+    );
+    
+    return _handleResponse(response);
+  }
+  
+  // Get temperature data
+  Future<Map<String, dynamic>> getTemperature() async {
+    return await getSensorData('temperature');
+  }
+  
+  // Get humidity data
+  Future<Map<String, dynamic>> getHumidity() async {
+    return await getSensorData('humidity');
+  }
+  
+  // Get gas data
+  Future<Map<String, dynamic>> getGas() async {
+    return await getSensorData('gas');
+  }
+  
+  // Get light data
+  Future<Map<String, dynamic>> getLight() async {
+    return await getSensorData('light');
+  }
+  
+  // Get temperature history
+  Future<List<dynamic>> getTemperatureHistory({int limit = 20}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/temperature/history?limit=$limit'),
+      headers: await _getHeaders(),
+    );
+    
+    final data = _handleResponse(response);
+    return data['data'] ?? [];
+  }
+  
+  // Get humidity history
+  Future<List<dynamic>> getHumidityHistory({int limit = 20}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/humidity/history?limit=$limit'),
+      headers: await _getHeaders(),
+    );
+    
+    final data = _handleResponse(response);
+    return data['data'] ?? [];
+  }
+  
+  // Get gas history
+  Future<List<dynamic>> getGasHistory({int limit = 20}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/gas/history?limit=$limit'),
+      headers: await _getHeaders(),
+    );
+    
+    final data = _handleResponse(response);
+    return data['data'] ?? [];
+  }
+  
+  // Control light
+  Future<Map<String, dynamic>> controlLight(String command) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/light/control'),
+      headers: await _getHeaders(),
+      body: jsonEncode({'command': command}),
+    );
+    
+    return _handleResponse(response);
+  }
+  
+  // Get saved user from SharedPreferences
+  Future<Map<String, dynamic>?> getSavedUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('user_data');
+      if (userJson != null) {
+        return jsonDecode(userJson);
+      }
+      return null;
+    } catch (e) {
+      print('[API] Error getting saved user: $e');
+      return null;
+    }
+  }
+  
+  // Save user to SharedPreferences
+  Future<void> saveUser(Map<String, dynamic> user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_data', jsonEncode(user));
+  }
+  
+  // Logout
+  Future<void> logout() async {
+    await clearToken();
+  }
+  
+  // Handle response
+  Map<String, dynamic> _handleResponse(http.Response response) {
+    try {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(response.body);
+      } else {
+        try {
+          final body = jsonDecode(response.body);
+          throw Exception(body['message'] ?? 'Request failed');
+        } catch (e) {
+          // If response is not JSON (e.g., HTML error page)
+          throw Exception('Server error: ${response.statusCode}. The endpoint may be offline.');
+        }
+      }
+    } on FormatException catch (e) {
+      // Handle JSON parsing errors
+      throw Exception('Invalid response from server. The endpoint may be offline or returning HTML instead of JSON.');
     }
   }
 }

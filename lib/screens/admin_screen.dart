@@ -72,10 +72,11 @@ class _UserApprovalTabState extends State<UserApprovalTab> {
     try {
       final response = await _apiService.getPendingUsers();
       setState(() {
-        if (response.success) {
-          _pendingUsers = response.users;
+        if (response['success'] == true) {
+          final usersData = response['users'] as List?;
+          _pendingUsers = usersData?.map((u) => User.fromJson(u)).toList() ?? [];
         } else {
-          _errorMessage = response.message;
+          _errorMessage = response['message'] ?? 'Failed to load users';
         }
         _isLoading = false;
       });
@@ -113,7 +114,7 @@ class _UserApprovalTabState extends State<UserApprovalTab> {
       final response = await _apiService.approveUser(user.userId);
       if (!mounted) return;
 
-      if (response.success) {
+      if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✓ ${user.name} approved successfully'),
@@ -124,7 +125,7 @@ class _UserApprovalTabState extends State<UserApprovalTab> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✗ ${response.message}'),
+            content: Text('✗ ${response['message'] ?? 'Failed to approve user'}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -166,7 +167,7 @@ class _UserApprovalTabState extends State<UserApprovalTab> {
       final response = await _apiService.rejectUser(user.userId);
       if (!mounted) return;
 
-      if (response.success) {
+      if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✓ ${user.name} rejected'),
@@ -177,7 +178,7 @@ class _UserApprovalTabState extends State<UserApprovalTab> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✗ ${response.message}'),
+            content: Text('✗ ${response['message'] ?? 'Failed to reject user'}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -421,11 +422,11 @@ class _PinManagementTabState extends State<PinManagementTab> {
     try {
       final response = await _apiService.getUniversalPin();
       setState(() {
-        if (response.success) {
-          _currentPin = response.pin;
-          _pinController.text = response.pin ?? '';
+        if (response['success'] == true) {
+          _currentPin = response['pin'] ?? '';
+          _pinController.text = _currentPin ?? '';
         } else {
-          _errorMessage = response.message;
+          _errorMessage = response['message'] ?? 'Failed to load PIN';
         }
         _isLoading = false;
       });
@@ -499,7 +500,7 @@ class _PinManagementTabState extends State<PinManagementTab> {
 
       setState(() => _isLoading = false);
 
-      if (response.success) {
+      if (response['success'] == true) {
         setState(() => _currentPin = newPin);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -510,7 +511,7 @@ class _PinManagementTabState extends State<PinManagementTab> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✗ ${response.message}'),
+            content: Text('✗ ${response['message'] ?? 'Failed to update PIN'}'),
             backgroundColor: Colors.red,
           ),
         );

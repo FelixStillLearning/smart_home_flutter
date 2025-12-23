@@ -27,11 +27,11 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final savedToken = await _apiService.getToken();
-      final savedUser = await _apiService.getSavedUser();
+      final savedUserData = await _apiService.getSavedUser();
 
-      if (savedToken != null && savedUser != null) {
+      if (savedToken != null && savedUserData != null) {
         _token = savedToken;
-        _currentUser = savedUser;
+        _currentUser = User.fromJson(savedUserData);
         _isAuthenticated = true;
       }
     } catch (e) {
@@ -54,24 +54,24 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final request = RegisterRequest(
+      final response = await _apiService.register(
         name: name,
         email: email,
         password: password,
         faceImage: faceImage,
       );
 
-      final response = await _apiService.register(request);
-
-      if (response.success) {
-        _currentUser = response.user;
+      if (response['success'] == true) {
+        if (response['user'] != null) {
+          _currentUser = User.fromJson(response['user']);
+        }
         // Note: Registration doesn't return token, user needs approval
         _errorMessage = null;
         _isLoading = false;
         notifyListeners();
         return true;
       } else {
-        _errorMessage = response.error ?? response.message;
+        _errorMessage = response['error'] ?? response['message'];
         _isLoading = false;
         notifyListeners();
         return false;
@@ -96,24 +96,24 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final request = RegisterRequest(
+      final response = await _apiService.register(
         name: name,
         email: email,
         password: password,
         faceImage: faceImage,
       );
 
-      final response = await _apiService.register(request);
-
-      if (response.success) {
-        _currentUser = response.user;
+      if (response['success'] == true) {
+        if (response['user'] != null) {
+          _currentUser = User.fromJson(response['user']);
+        }
         // Note: Registration doesn't return token, user needs approval
         _errorMessage = null;
         _isLoading = false;
         notifyListeners();
         return true;
       } else {
-        _errorMessage = response.error ?? response.message;
+        _errorMessage = response['error'] ?? response['message'];
         _isLoading = false;
         notifyListeners();
         return false;
@@ -136,23 +136,23 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final request = LoginRequest(
-        email: email,
-        password: password,
-      );
+      final response = await _apiService.login(email, password);
 
-      final response = await _apiService.login(request);
-
-      if (response.success && response.user != null) {
-        _currentUser = response.user;
-        _token = response.token;
+      if (response['success'] == true && response['user'] != null) {
+        _currentUser = User.fromJson(response['user']);
+        _token = response['token'];
+        
+        // Save token and user data
+        await _apiService.setToken(_token!);
+        await _apiService.saveUser(response['user']);
+        
         _isAuthenticated = true;
         _errorMessage = null;
         _isLoading = false;
         notifyListeners();
         return true;
       } else {
-        _errorMessage = response.error ?? response.message;
+        _errorMessage = response['error'] ?? response['message'];
         _isLoading = false;
         notifyListeners();
         return false;

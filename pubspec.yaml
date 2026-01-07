@@ -24,6 +24,8 @@ dependencies:
   # Utilities
   intl: ^0.18.1 # Untuk format tanggal
   shared_preferences: ^2.2.2 # Untuk menyimpan settings
+  csv: ^6.0.0 # Untuk export data ke CSV
+  path_provider: ^2.1.2 # Untuk akses file system
 
   # Camera & Image
   image_picker: ^1.0.7 # Untuk mengambil foto dari kamera/gallery

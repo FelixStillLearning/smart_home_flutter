@@ -6,6 +6,12 @@ import 'monitoring_screen.dart';
 import 'controlling_screen.dart';
 import 'login_screen.dart';
 import 'admin_screen.dart';
+import 'profile_screen.dart';
+import 'analytics_screen.dart';
+import 'automation_screen.dart';
+import 'user_management_screen.dart';
+import 'access_logs_screen.dart';
+import 'settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -86,7 +92,32 @@ class DashboardHomeScreen extends StatelessWidget {
           PopupMenuButton<String>(
             icon: const Icon(Icons.account_circle),
             onSelected: (value) async {
-              if (value == 'admin') {
+              if (value == 'profile') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              } else if (value == 'analytics') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+                );
+              } else if (value == 'automation') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AutomationScreen()),
+                );
+              } else if (value == 'access_logs') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AccessLogsScreen()),
+                );
+              } else if (value == 'user_management') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const UserManagementScreen()),
+                );
+              } else if (value == 'settings') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              } else if (value == 'admin') {
                 // Navigate to admin panel
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AdminScreen()),
@@ -138,7 +169,48 @@ class DashboardHomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              if (authProvider.currentUser?.isAdmin == true)
+              PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person, size: 20),
+                    SizedBox(width: 8),
+                    Text('Profile'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'analytics',
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics, size: 20),
+                    SizedBox(width: 8),
+                    Text('Analytics'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'automation',
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_mode, size: 20),
+                    SizedBox(width: 8),
+                    Text('Automation'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'access_logs',
+                child: Row(
+                  children: [
+                    Icon(Icons.history, size: 20),
+                    SizedBox(width: 8),
+                    Text('Access Logs'),
+                  ],
+                ),
+              ),
+              if (authProvider.currentUser?.isAdmin == true) ...[
+                const PopupMenuDivider(),
                 PopupMenuItem<String>(
                   value: 'admin',
                   child: Row(
@@ -149,6 +221,28 @@ class DashboardHomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                PopupMenuItem<String>(
+                  value: 'user_management',
+                  child: Row(
+                    children: [
+                      Icon(Icons.people, size: 20),
+                      SizedBox(width: 8),
+                      Text('User Management'),
+                    ],
+                  ),
+                ),
+              ],
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings, size: 20),
+                    SizedBox(width: 8),
+                    Text('Settings'),
+                  ],
+                ),
+              ),
               const PopupMenuItem<String>(
                 value: 'logout',
                 child: Row(

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/smart_home_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/settings_provider.dart';
+import 'providers/automation_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
 
@@ -18,15 +20,36 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => SmartHomeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => AutomationProvider()),
       ],
-      child: MaterialApp(
-        title: 'Smart Home IoT',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
-        home: const SplashScreen(),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, child) {
+          // Determine theme mode based on settings
+          ThemeMode themeMode;
+          switch (settingsProvider.settings.theme) {
+            case 'light':
+              themeMode = ThemeMode.light;
+              break;
+            case 'dark':
+              themeMode = ThemeMode.dark;
+              break;
+            default:
+              themeMode = ThemeMode.system;
+          }
+
+          return MaterialApp(
+            title: 'Smart Home IoT',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData.dark(useMaterial3: true),
+            themeMode: themeMode,
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }

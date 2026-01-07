@@ -1,11 +1,9 @@
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
-import '../services/face_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
-  final FaceService _faceService = FaceService();
 
   User? _currentUser;
   String? _token;
@@ -198,4 +196,10 @@ class AuthProvider with ChangeNotifier {
 
   /// Check if user account is pending
   bool get isPending => _currentUser?.isPending ?? false;
+
+  /// Update current user data
+  Future<void> updateUserData(User user) async {
+    _currentUser = user;
+    notifyListeners();
+  }
 }

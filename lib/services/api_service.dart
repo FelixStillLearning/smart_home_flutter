@@ -2,13 +2,16 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/sensor_models.dart';
 import '../models/user_model.dart';
+import '../models/analytics_models.dart';
+import '../models/access_log_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:csv/csv.dart';
 
 class ApiService {
   // ========== KONFIGURASI API ==========
   // Untuk Android Emulator gunakan 10.0.2.2 (bukan localhost)
   // Untuk iOS Simulator atau Physical Device, gunakan IP komputer Anda
-  static const String baseUrl = 'http://172.20.10.3:8080';
+  static const String baseUrl = 'http://192.168.100.20:8080';
 
   // API Endpoints - Disesuaikan dengan backend Go
   static const String endpointTemperature = '/api/sensor/temperature';
@@ -786,6 +789,476 @@ class ApiService {
     } catch (e) {
       print('[API] Health check failed: $e');
       return false;
+    }
+  }
+
+  // ========== ANALYTICS METHODS ==========
+
+  /// Get sensor statistics
+  Future<SensorStats?> getSensorStats({String range = '24h'}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/sensor/stats?range=$range'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return SensorStats.fromJson(jsonData['data']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('[API] Exception getting sensor stats: $e');
+      return null;
+    }
+  }
+
+  /// Get hourly sensor data for charts
+  Future<List<HourlyData>> getHourlyData({String range = '24h'}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/sensor/hourly?range=$range'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return (jsonData['data'] as List)
+              .map((e) => HourlyData.fromJson(e))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('[API] Exception getting hourly data: $e');
+      return [];
+    }
+  }
+
+  /// Get paginated sensor data
+  Future<SensorDataResponse?> getPaginatedSensorData({
+    String range = '24h',
+    int page = 1,
+    int pageSize = 50,
+  }) async {
+    try {
+      final response = await http
+          .get(Uri.parse(
+              '$baseUrl/api/sensor/data?range=$range&page=$page&page_size=$pageSize'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return SensorDataResponse.fromJson(jsonData['data']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('[API] Exception getting paginated sensor data: $e');
+      return null;
+    }
+  }
+
+  /// Export sensor data to CSV
+  Future<String?> exportSensorDataToCSV({String range = '24h'}) async {
+    try {
+      final data = await getPaginatedSensorData(range: range, pageSize: 1000);
+      if (data == null || data.data.isEmpty) {
+        return null;
+      }
+
+      List<List<dynamic>> rows = [];
+      rows.add(['ID', 'Temperature', 'Humidity', 'Light', 'Gas', 'Timestamp']);
+
+      for (var item in data.data) {
+        rows.add([
+          item.id,
+          item.temperature ?? '',
+          item.humidity ?? '',
+          item.light ?? '',
+          item.gas ?? '',
+          item.timestamp,
+        ]);
+      }
+
+      return const ListToCsvConverter().convert(rows);
+    } catch (e) {
+      print('[API] Exception exporting to CSV: $e');
+      return null;
+    }
+  }
+
+  // ========== ACCESS LOG METHODS ==========
+
+  /// Get all access logs
+  Future<List<AccessLog>> getAccessLogs({int limit = 100}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/access-log?limit=$limit'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return (jsonData['data'] as List)
+              .map((e) => AccessLog.fromJson(e))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('[API] Exception getting access logs: $e');
+      return [];
+    }
+  }
+
+  /// Get access logs by user ID
+  Future<List<AccessLog>> getAccessLogsByUser(int userId,
+      {int limit = 50}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/access-log/user/$userId?limit=$limit'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return (jsonData['data'] as List)
+              .map((e) => AccessLog.fromJson(e))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('[API] Exception getting access logs by user: $e');
+      return [];
+    }
+  }
+
+  /// Get access logs by status
+  Future<List<AccessLog>> getAccessLogsByStatus(String status,
+      {int limit = 50}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/access-log/status/$status?limit=$limit'))
+          .timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return (jsonData['data'] as List)
+              .map((e) => AccessLog.fromJson(e))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('[API] Exception getting access logs by status: $e');
+      return [];
+    }
+  }
+
+  // ========== USER PROFILE METHODS ==========
+
+  /// Update user profile
+  Future<AuthResponse> updateProfile(
+      int userId, String name, String email) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AuthResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/api/user/$userId/profile'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'name': name,
+              'email': email,
+            }),
+          )
+          .timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        // Update saved user data
+        if (jsonData['data'] != null) {
+          final updatedUser = User.fromJson(jsonData['data']);
+          await _saveUser(updatedUser);
+        }
+
+        return AuthResponse(
+          success: true,
+          message: jsonData['message'] ?? 'Profile updated successfully',
+          user:
+              jsonData['data'] != null ? User.fromJson(jsonData['data']) : null,
+        );
+      } else {
+        return AuthResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to update profile',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception updating profile: $e');
+      return AuthResponse(
+        success: false,
+        message: 'Connection error',
+      );
+    }
+  }
+
+  /// Change password
+  Future<AuthResponse> changePassword(
+      int userId, String oldPassword, String newPassword) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AuthResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/api/user/$userId/password'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'current_password': oldPassword,
+              'new_password': newPassword,
+            }),
+          )
+          .timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        return AuthResponse(
+          success: true,
+          message: jsonData['message'] ?? 'Password changed successfully',
+        );
+      } else {
+        return AuthResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to change password',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception changing password: $e');
+      return AuthResponse(
+        success: false,
+        message: 'Connection error',
+      );
+    }
+  }
+
+  /// Re-enroll face (update face data)
+  Future<AuthResponse> reEnrollFace(int userId, String faceImageBase64) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AuthResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/user/$userId/reenroll-face'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'face_image': faceImageBase64,
+            }),
+          )
+          .timeout(authTimeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        return AuthResponse(
+          success: true,
+          message: jsonData['message'] ?? 'Face re-enrolled successfully',
+        );
+      } else {
+        return AuthResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to re-enroll face',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception re-enrolling face: $e');
+      return AuthResponse(
+        success: false,
+        message: 'Connection error',
+      );
+    }
+  }
+
+  // ========== USER MANAGEMENT METHODS (Admin Only) ==========
+
+  /// Get all users
+  Future<List<User>> getAllUsers() async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return [];
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/user'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return (jsonData['data'] as List)
+              .map((e) => User.fromJson(e))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('[API] Exception getting all users: $e');
+      return [];
+    }
+  }
+
+  /// Get user by ID
+  Future<User?> getUserById(int userId) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return null;
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/user/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(timeoutDuration);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          return User.fromJson(jsonData['data']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('[API] Exception getting user by ID: $e');
+      return null;
+    }
+  }
+
+  /// Update user (Admin)
+  Future<AuthResponse> updateUser(
+      int userId, Map<String, dynamic> updates) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AuthResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/api/user/$userId'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(updates),
+          )
+          .timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        return AuthResponse(
+          success: true,
+          message: jsonData['message'] ?? 'User updated successfully',
+          user:
+              jsonData['data'] != null ? User.fromJson(jsonData['data']) : null,
+        );
+      } else {
+        return AuthResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to update user',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception updating user: $e');
+      return AuthResponse(
+        success: false,
+        message: 'Connection error',
+      );
+    }
+  }
+
+  /// Delete user (Admin)
+  Future<AuthResponse> deleteUser(int userId) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return AuthResponse(
+          success: false,
+          message: 'Not authenticated',
+        );
+      }
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/user/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(timeoutDuration);
+
+      final jsonData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        return AuthResponse(
+          success: true,
+          message: jsonData['message'] ?? 'User deleted successfully',
+        );
+      } else {
+        return AuthResponse(
+          success: false,
+          message: jsonData['error'] ?? 'Failed to delete user',
+        );
+      }
+    } catch (e) {
+      print('[API] Exception deleting user: $e');
+      return AuthResponse(
+        success: false,
+        message: 'Connection error',
+      );
     }
   }
 }

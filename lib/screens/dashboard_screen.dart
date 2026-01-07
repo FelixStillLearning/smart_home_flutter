@@ -6,11 +6,9 @@ import 'monitoring_screen.dart';
 import 'controlling_screen.dart';
 import 'login_screen.dart';
 import 'admin_screen.dart';
+import 'admin_panel_screen.dart';
 import 'profile_screen.dart';
 import 'analytics_screen.dart';
-import 'automation_screen.dart';
-import 'user_management_screen.dart';
-import 'access_logs_screen.dart';
 import 'settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -100,27 +98,13 @@ class DashboardHomeScreen extends StatelessWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
                 );
-              } else if (value == 'automation') {
+              } else if (value == 'admin_panel') {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AutomationScreen()),
-                );
-              } else if (value == 'access_logs') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AccessLogsScreen()),
-                );
-              } else if (value == 'user_management') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => const UserManagementScreen()),
+                  MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
                 );
               } else if (value == 'settings') {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                );
-              } else if (value == 'admin') {
-                // Navigate to admin panel
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminScreen()),
                 );
               } else if (value == 'logout') {
                 final shouldLogout = await showDialog<bool>(
@@ -189,45 +173,17 @@ class DashboardHomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              PopupMenuItem<String>(
-                value: 'automation',
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_mode, size: 20),
-                    SizedBox(width: 8),
-                    Text('Automation'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'access_logs',
-                child: Row(
-                  children: [
-                    Icon(Icons.history, size: 20),
-                    SizedBox(width: 8),
-                    Text('Access Logs'),
-                  ],
-                ),
-              ),
               if (authProvider.currentUser?.isAdmin == true) ...[
                 const PopupMenuDivider(),
                 PopupMenuItem<String>(
-                  value: 'admin',
+                  value: 'admin_panel',
                   child: Row(
                     children: [
-                      Icon(Icons.admin_panel_settings, size: 20),
+                      Icon(Icons.admin_panel_settings,
+                          size: 20, color: Colors.red),
                       SizedBox(width: 8),
-                      Text('Admin Panel'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'user_management',
-                  child: Row(
-                    children: [
-                      Icon(Icons.people, size: 20),
-                      SizedBox(width: 8),
-                      Text('User Management'),
+                      Text('Admin Panel',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),

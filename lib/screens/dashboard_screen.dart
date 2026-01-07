@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/smart_home_provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/common_app_bar.dart';
 import 'monitoring_screen.dart';
 import 'controlling_screen.dart';
 import 'login_screen.dart';
@@ -64,154 +65,8 @@ class DashboardHomeScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🏠 Smart Home Dashboard'),
-        actions: [
-          // Connection status indicator
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Icon(
-                  provider.isConnected ? Icons.wifi : Icons.wifi_off,
-                  color: provider.isConnected ? Colors.green : Colors.red,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  provider.isConnected ? 'Connected' : 'Offline',
-                  style: TextStyle(
-                    color: provider.isConnected ? Colors.green : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // User menu
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle),
-            onSelected: (value) async {
-              if (value == 'profile') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              } else if (value == 'analytics') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
-                );
-              } else if (value == 'admin_panel') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
-                );
-              } else if (value == 'settings') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                );
-              } else if (value == 'logout') {
-                final shouldLogout = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Apakah Anda yakin ingin logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Batal'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Logout'),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (shouldLogout == true && context.mounted) {
-                  await authProvider.logout();
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  }
-                }
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                enabled: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      authProvider.currentUser?.name ?? 'User',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      authProvider.currentUser?.email ?? '',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    const Divider(),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'profile',
-                child: Row(
-                  children: [
-                    Icon(Icons.person, size: 20),
-                    SizedBox(width: 8),
-                    Text('Profile'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'analytics',
-                child: Row(
-                  children: [
-                    Icon(Icons.analytics, size: 20),
-                    SizedBox(width: 8),
-                    Text('Analytics'),
-                  ],
-                ),
-              ),
-              if (authProvider.currentUser?.isAdmin == true) ...[
-                const PopupMenuDivider(),
-                PopupMenuItem<String>(
-                  value: 'admin_panel',
-                  child: Row(
-                    children: [
-                      Icon(Icons.admin_panel_settings,
-                          size: 20, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Admin Panel',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ],
-              const PopupMenuDivider(),
-              PopupMenuItem<String>(
-                value: 'settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings, size: 20),
-                    SizedBox(width: 8),
-                    Text('Settings'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, size: 20),
-                    SizedBox(width: 8),
-                    Text('Logout'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+      appBar: const CommonAppBar(
+        title: 'Smart Home',
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -254,38 +109,81 @@ class DashboardHomeScreen extends StatelessWidget {
       BuildContext context, SmartHomeProvider provider) {
     final isLocked = provider.doorStatus?.isLocked ?? true;
 
-    return Card(
-      elevation: 4,
-      color: isLocked ? Colors.green.shade50 : Colors.orange.shade50,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isLocked
+              ? [Colors.green.shade400, Colors.green.shade700]
+              : [Colors.orange.shade400, Colors.orange.shade700],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: (isLocked ? Colors.green : Colors.orange).withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            Icon(
-              isLocked ? Icons.lock : Icons.lock_open,
-              size: 64,
-              color: isLocked ? Colors.green : Colors.orange,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              isLocked ? 'PINTU TERKUNCI' : 'PINTU TERBUKA',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isLocked
-                        ? Colors.green.shade800
-                        : Colors.orange.shade800,
-                  ),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
+                size: 64,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 16),
+            Text(
+              isLocked ? 'PINTU TERKUNCI' : 'PINTU TERBUKA',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isLocked ? 'Rumah Anda Aman' : 'Perhatian Diperlukan',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.9),
+              ),
+            ),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: provider.isConnected ? provider.toggleDoor : null,
-                icon: Icon(isLocked ? Icons.lock_open : Icons.lock),
-                label: Text(isLocked ? 'Buka Pintu' : 'Kunci Pintu'),
+                icon: Icon(
+                    isLocked ? Icons.lock_open_rounded : Icons.lock_rounded),
+                label: Text(
+                  isLocked ? 'Buka Pintu' : 'Kunci Pintu',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: isLocked ? Colors.orange : Colors.green,
+                  backgroundColor: Colors.white,
+                  foregroundColor:
+                      isLocked ? Colors.green.shade700 : Colors.orange.shade700,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
                 ),
               ),
             ),
@@ -296,51 +194,46 @@ class DashboardHomeScreen extends StatelessWidget {
   }
 
   Widget _buildQuickControlsSection(SmartHomeProvider provider) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Quick Controls',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        Row(
           children: [
-            const Text(
-              'Quick Controls',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Expanded(
+              child: _buildQuickControlButton(
+                icon: provider.isLightOn
+                    ? Icons.lightbulb_rounded
+                    : Icons.lightbulb_outline_rounded,
+                label: 'Lampu',
+                isOn: provider.isLightOn,
+                color: Colors.amber,
+                onPressed: provider.isConnected ? provider.toggleLight : null,
+              ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickControlButton(
-                    icon: provider.isLightOn
-                        ? Icons.lightbulb
-                        : Icons.lightbulb_outline,
-                    label: 'Lampu',
-                    isOn: provider.isLightOn,
-                    onPressed:
-                        provider.isConnected ? provider.toggleLight : null,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickControlButton(
-                    icon: Icons.blinds,
-                    label: 'Gorden',
-                    subtitle: '${provider.curtainPosition}%',
-                    onPressed: provider.isConnected
-                        ? () {
-                            // Toggle gorden (0 atau 100)
-                            provider.setCurtainPosition(
-                              provider.curtainPosition > 50 ? 0 : 100,
-                            );
-                          }
-                        : null,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickControlButton(
+                icon: Icons.blinds_closed_rounded,
+                label: 'Gorden',
+                subtitle: '${provider.curtainPosition}%',
+                color: Colors.indigo,
+                onPressed: provider.isConnected
+                    ? () {
+                        provider.setCurtainPosition(
+                          provider.curtainPosition > 50 ? 0 : 100,
+                        );
+                      }
+                    : null,
+              ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
@@ -349,22 +242,63 @@ class DashboardHomeScreen extends StatelessWidget {
     required String label,
     String? subtitle,
     bool isOn = false,
+    required Color color,
     VoidCallback? onPressed,
   }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
         padding: const EdgeInsets.all(20),
-        backgroundColor: isOn ? Colors.amber.shade100 : null,
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32),
-          const SizedBox(height: 8),
-          Text(label),
-          if (subtitle != null)
-            Text(subtitle, style: const TextStyle(fontSize: 12)),
-        ],
+        decoration: BoxDecoration(
+          gradient: isOn
+              ? LinearGradient(
+                  colors: [color.withOpacity(0.8), color],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isOn ? null : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color:
+                  isOn ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 40,
+              color: isOn ? Colors.white : color,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isOn ? Colors.white : Colors.black87,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isOn
+                      ? Colors.white.withOpacity(0.9)
+                      : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -411,33 +345,54 @@ class DashboardHomeScreen extends StatelessWidget {
     required String value,
     required Color color,
   }) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.white, color.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 32, color: color),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

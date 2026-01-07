@@ -38,47 +38,23 @@ class ControllingScreen extends StatelessWidget {
   Widget _buildDoorControlCard(SmartHomeProvider provider) {
     final isLocked = provider.doorStatus?.isLocked ?? true;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.white,
-            (isLocked ? Colors.green : Colors.orange).shade50,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: (isLocked ? Colors.green : Colors.orange).withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: (isLocked ? Colors.green : Colors.orange)
-                        .withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
-                    size: 40,
-                    color: isLocked
-                        ? Colors.green.shade700
-                        : Colors.orange.shade700,
-                  ),
+                Icon(
+                  isLocked ? Icons.lock : Icons.lock_open,
+                  size: 40,
+                  color: isLocked ? Colors.green : Colors.orange,
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,28 +62,17 @@ class ControllingScreen extends StatelessWidget {
                       const Text(
                         'Door Lock',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: (isLocked ? Colors.green : Colors.orange)
-                              .withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          isLocked ? 'Locked' : 'Unlocked',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isLocked
-                                ? Colors.green.shade800
-                                : Colors.orange.shade800,
-                          ),
+                      Text(
+                        isLocked ? 'Locked' : 'Unlocked',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isLocked ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -115,7 +80,7 @@ class ControllingScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -160,51 +125,25 @@ class ControllingScreen extends StatelessWidget {
   }
 
   Widget _buildLightControlCard(SmartHomeProvider provider) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: provider.isLightOn
-              ? [Colors.amber.shade100, Colors.amber.shade50]
-              : [Colors.white, Colors.grey.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: provider.isLightOn
-                ? Colors.amber.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: provider.isLightOn
-                        ? Colors.amber.withOpacity(0.2)
-                        : Colors.grey.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    provider.isLightOn
-                        ? Icons.lightbulb_rounded
-                        : Icons.lightbulb_outline_rounded,
-                    size: 40,
-                    color: provider.isLightOn
-                        ? Colors.amber.shade700
-                        : Colors.grey.shade600,
-                  ),
+                Icon(
+                  provider.isLightOn
+                      ? Icons.lightbulb
+                      : Icons.lightbulb_outline,
+                  size: 40,
+                  color: provider.isLightOn ? Colors.amber : Colors.grey,
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,47 +151,33 @@ class ControllingScreen extends StatelessWidget {
                       const Text(
                         'Lights',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: provider.isLightOn
-                              ? Colors.amber.withOpacity(0.2)
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          provider.isLightOn ? 'ON' : 'OFF',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: provider.isLightOn
-                                ? Colors.amber.shade800
-                                : Colors.grey.shade700,
-                          ),
+                      Text(
+                        provider.isLightOn ? 'ON' : 'OFF',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color:
+                              provider.isLightOn ? Colors.amber : Colors.grey,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Transform.scale(
-                  scale: 1.2,
-                  child: Switch(
-                    value: provider.isLightOn,
-                    onChanged: provider.isConnected
-                        ? (value) => provider.setLightState(value)
-                        : null,
-                    activeColor: Colors.amber.shade700,
-                  ),
+                Switch(
+                  value: provider.isLightOn,
+                  onChanged: provider.isConnected
+                      ? (value) => provider.setLightState(value)
+                      : null,
+                  activeColor: Colors.amber,
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -260,34 +185,24 @@ class ControllingScreen extends StatelessWidget {
                     onPressed: provider.isConnected
                         ? () => provider.setLightState(true)
                         : null,
-                    icon: const Icon(Icons.lightbulb_rounded),
+                    icon: const Icon(Icons.lightbulb),
                     label: const Text('Turn ON'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber.shade600,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+                      backgroundColor: Colors.amber,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: provider.isConnected
                         ? () => provider.setLightState(false)
                         : null,
-                    icon: const Icon(Icons.lightbulb_outline_rounded),
+                    icon: const Icon(Icons.lightbulb_outline),
                     label: const Text('Turn OFF'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade700,
-                      side: BorderSide(color: Colors.grey.shade400, width: 2),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
@@ -301,41 +216,23 @@ class ControllingScreen extends StatelessWidget {
 
   Widget _buildCurtainControlCard(
       SmartHomeProvider provider, BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.white, Colors.indigo.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.indigo.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.blinds_rounded,
-                    size: 40,
-                    color: Colors.indigo.shade700,
-                  ),
+                const Icon(
+                  Icons.blinds,
+                  size: 40,
+                  color: Colors.indigo,
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,25 +240,17 @@ class ControllingScreen extends StatelessWidget {
                       const Text(
                         'Curtain',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.indigo.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${provider.curtainPosition}% Open',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.indigo.shade800,
-                          ),
+                      Text(
+                        '${provider.curtainPosition}% Open',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.indigo,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -369,52 +258,30 @@ class ControllingScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.indigo.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: Colors.indigo.shade600,
-                  inactiveTrackColor: Colors.indigo.shade100,
-                  thumbColor: Colors.indigo.shade700,
-                  overlayColor: Colors.indigo.withOpacity(0.2),
-                  trackHeight: 6,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 12),
-                ),
-                child: Slider(
-                  value: provider.curtainPosition.toDouble(),
-                  min: 0,
-                  max: 100,
-                  divisions: 10,
-                  label: '${provider.curtainPosition}%',
-                  onChanged: provider.isConnected
-                      ? (value) => provider.setCurtainPosition(value.toInt())
-                      : null,
-                ),
-              ),
+            const SizedBox(height: 16),
+            Slider(
+              value: provider.curtainPosition.toDouble(),
+              min: 0,
+              max: 100,
+              divisions: 10,
+              label: '${provider.curtainPosition}%',
+              onChanged: provider.isConnected
+                  ? (value) => provider.setCurtainPosition(value.toInt())
+                  : null,
+              activeColor: Colors.indigo,
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: provider.isConnected
                         ? () => provider.setCurtainPosition(0)
                         : null,
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(Icons.close),
                     label: const Text('Close'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.indigo.shade700,
-                      side: BorderSide(color: Colors.indigo.shade700, width: 2),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
@@ -424,16 +291,11 @@ class ControllingScreen extends StatelessWidget {
                     onPressed: provider.isConnected
                         ? () => provider.setCurtainPosition(100)
                         : null,
-                    icon: const Icon(Icons.check_rounded),
+                    icon: const Icon(Icons.check),
                     label: const Text('Open'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo.shade600,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+                      backgroundColor: Colors.indigo,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),

@@ -109,48 +109,30 @@ class DashboardHomeScreen extends StatelessWidget {
       BuildContext context, SmartHomeProvider provider) {
     final isLocked = provider.doorStatus?.isLocked ?? true;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isLocked
-              ? [Colors.green.shade400, Colors.green.shade700]
-              : [Colors.orange.shade400, Colors.orange.shade700],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isLocked ? Colors.green : Colors.orange,
+          width: 2,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: (isLocked ? Colors.green : Colors.orange).withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
-                size: 64,
-                color: Colors.white,
-              ),
+            Icon(
+              isLocked ? Icons.lock : Icons.lock_open,
+              size: 48,
+              color: isLocked ? Colors.green : Colors.orange,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               isLocked ? 'PINTU TERKUNCI' : 'PINTU TERBUKA',
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 1.2,
               ),
             ),
             const SizedBox(height: 8),
@@ -158,32 +140,21 @@ class DashboardHomeScreen extends StatelessWidget {
               isLocked ? 'Rumah Anda Aman' : 'Perhatian Diperlukan',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.9),
+                color: isLocked ? Colors.green : Colors.orange,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: provider.isConnected ? provider.toggleDoor : null,
-                icon: Icon(
-                    isLocked ? Icons.lock_open_rounded : Icons.lock_rounded),
+                icon: Icon(isLocked ? Icons.lock_open : Icons.lock),
                 label: Text(
                   isLocked ? 'Buka Pintu' : 'Kunci Pintu',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.white,
-                  foregroundColor:
-                      isLocked ? Colors.green.shade700 : Colors.orange.shade700,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: isLocked ? Colors.green : Colors.orange,
                 ),
               ),
             ),
@@ -245,59 +216,47 @@ class DashboardHomeScreen extends StatelessWidget {
     required Color color,
     VoidCallback? onPressed,
   }) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: isOn
-              ? LinearGradient(
-                  colors: [color.withOpacity(0.8), color],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isOn ? null : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  isOn ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 40,
-              color: isOn ? Colors.white : color,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isOn ? Colors.white : Colors.black87,
+    return Card(
+      elevation: isOn ? 3 : 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: isOn ? color : Colors.white,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 32,
+                color: isOn ? Colors.white : color,
               ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
-                subtitle,
+                label,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isOn
-                      ? Colors.white.withOpacity(0.9)
-                      : Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                  color: isOn ? Colors.white : Colors.black87,
                 ),
+                textAlign: TextAlign.center,
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isOn ? Colors.white70 : Colors.grey,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -345,54 +304,36 @@ class DashboardHomeScreen extends StatelessWidget {
     required String value,
     required Color color,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.white, color.withOpacity(0.05)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 36, color: color),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+              ),
             ),
-            child: Icon(icon, size: 32, color: color),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
